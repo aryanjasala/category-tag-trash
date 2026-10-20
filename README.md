@@ -1,25 +1,40 @@
-# Term Trash
+<h1 align="center">Term Trash</h1>
 
-[![PHPCS](https://github.com/aryanjasala/term-trash/actions/workflows/phpcs.yml/badge.svg)](https://github.com/aryanjasala/term-trash/actions/workflows/phpcs.yml) [![PHPStan](https://github.com/aryanjasala/term-trash/actions/workflows/phpstan.yml/badge.svg)](https://github.com/aryanjasala/term-trash/actions/workflows/phpstan.yml) [![Unit tests](https://github.com/aryanjasala/term-trash/actions/workflows/unit-tests.yml/badge.svg)](https://github.com/aryanjasala/term-trash/actions/workflows/unit-tests.yml) [![E2E tests](https://github.com/aryanjasala/term-trash/actions/workflows/e2e-tests.yml/badge.svg)](https://github.com/aryanjasala/term-trash/actions/workflows/e2e-tests.yml) [![Plugin Check](https://github.com/aryanjasala/term-trash/actions/workflows/plugin-check.yml/badge.svg)](https://github.com/aryanjasala/term-trash/actions/workflows/plugin-check.yml)
+<p align="center">
+  <a href="https://playground.wordpress.net/?blueprint-url=https://raw.githubusercontent.com/aryanjasala/term-trash/main/blueprint.json"><img src="https://img.shields.io/badge/Try%20in-WordPress%20Playground-3858e9?logo=wordpress&logoColor=white" alt="Try in WordPress Playground"></a>
+  <a href="https://github.com/aryanjasala/term-trash/releases/latest"><img src="https://img.shields.io/github/v/release/aryanjasala/term-trash?label=release&color=2271b1" alt="Latest release"></a>
+  <img src="https://img.shields.io/badge/WordPress-6.6%2B-3858e9?logo=wordpress&logoColor=white" alt="WordPress 6.6+">
+  <img src="https://img.shields.io/badge/PHP-7.4%2B-777bb4?logo=php&logoColor=white" alt="PHP 7.4+">
+  <a href="LICENSE.md"><img src="https://img.shields.io/badge/license-GPL--2.0--or--later-blue" alt="License: GPL-2.0-or-later"></a>
+  <br>
+  <a href="https://github.com/aryanjasala/term-trash/actions/workflows/phpcs.yml"><img src="https://github.com/aryanjasala/term-trash/actions/workflows/phpcs.yml/badge.svg" alt="PHPCS"></a>
+  <a href="https://github.com/aryanjasala/term-trash/actions/workflows/phpstan.yml"><img src="https://github.com/aryanjasala/term-trash/actions/workflows/phpstan.yml/badge.svg" alt="PHPStan"></a>
+  <a href="https://github.com/aryanjasala/term-trash/actions/workflows/unit-tests.yml"><img src="https://github.com/aryanjasala/term-trash/actions/workflows/unit-tests.yml/badge.svg" alt="Unit tests"></a>
+  <a href="https://github.com/aryanjasala/term-trash/actions/workflows/e2e-tests.yml"><img src="https://github.com/aryanjasala/term-trash/actions/workflows/e2e-tests.yml/badge.svg" alt="E2E tests"></a>
+  <a href="https://github.com/aryanjasala/term-trash/actions/workflows/plugin-check.yml"><img src="https://github.com/aryanjasala/term-trash/actions/workflows/plugin-check.yml/badge.svg" alt="Plugin Check"></a>
+</p>
 
-A trash for WordPress categories, tags and custom terms. Deleting a term moves it to Term Trash for 30 days instead of removing it, and an **Undo** shows up right after the delete.
+<p align="center">A trash for WordPress categories, tags and custom terms. Undo a delete in one click, or restore it later with its posts, child terms and menu links.</p>
 
-![Undo right after deleting a category](.wordpress-org/screenshot-1.png)
+<p align="center">
+  <img src=".wordpress-org/screenshot-1.png" alt="Undo right after deleting a category" width="880">
+</p>
+
+---
+
+Posts and pages go to the trash when you delete them. Categories and tags don't: one click and the term is gone, its posts move to Uncategorized, its child categories move up a level and its menu links disappear. Term Trash keeps every deleted term for 30 days and puts all of that back on restore, under the same ID.
 
 ## Features
 
-- **Undo** on every term screen, for single and bulk deletes
-- **Restore** puts back the term with the **same ID**, name, slug, description, parent and term meta
-- Every post the term was assigned to is reattached, in the same order
-- Child terms move back under it, and menu links to it are recreated in the same menu position
-- Posts that only got "Uncategorized" because of the delete lose it again
-- **Tools > Term Trash** lists deleted terms by taxonomy, with search, bulk restore and delete, and Empty trash
-- Deleted terms are kept for 7, 30, 90 or 365 days, then a daily task deletes them for good
-- Works with categories, tags, WooCommerce product categories and attributes, and any custom taxonomy with an admin screen
+- **Undo** right after a delete, on every term screen, for single and bulk deletes
+- **Same ID** on restore, so navigation blocks, widgets and shortcodes that store the ID work again
+- **Everything comes back**: term meta, posts (in the same order), child terms and menu links in their menu position
+- Posts that only got **Uncategorized** because of the delete lose it again
+- **Tools > Term Trash**: taxonomy tabs, search, bulk restore and delete, Empty trash, and what each restore brings back
+- Kept for **7, 30, 90 or 365 days**, then a daily task deletes them for good
+- Categories, tags, WooCommerce product categories and attributes, and any custom taxonomy with an admin screen
 
-The same ID matters because navigation blocks, widgets and shortcodes store terms by ID, so they work again without editing.
-
-## Installation
+## Install
 
 1. Download `term-trash.zip` from the [latest release](https://github.com/aryanjasala/term-trash/releases/latest).
 2. In WordPress, go to **Plugins > Add New Plugin > Upload Plugin**, choose the zip and activate it.
@@ -30,92 +45,59 @@ Or with WP-CLI:
 wp plugin install https://github.com/aryanjasala/term-trash/releases/latest/download/term-trash.zip --activate
 ```
 
-Needs WordPress 6.6+ and PHP 7.4+.
+Needs WordPress 6.6+ and PHP 7.4+. To try it first, the **Try in WordPress Playground** badge opens a throwaway WordPress in your browser with the plugin and some demo content.
 
-## Usage
+## Quick look
 
-Delete a term as usual. An **Undo** notice appears above the list right away. For anything older, open **Tools > Term Trash**:
-
-![Tools > Term Trash](.wordpress-org/screenshot-2.png)
-
-Each row shows what the term was attached to. **What restore brings back** lists the posts, child terms and menus before you restore:
-
-![What a restore brings back](.wordpress-org/screenshot-3.png)
-
-### WP-CLI
+Everything on the screen is also on WP-CLI:
 
 ```sh
-wp term-trash list [--taxonomy=<taxonomy>] [--format=table|csv|json|ids]
-wp term-trash restore <id>...
-wp term-trash delete <id>... | --all
+wp term-trash list --taxonomy=category
+wp term-trash restore 42
+wp term-trash delete --all
 ```
 
-### For developers
+## Screenshots
 
-| Hook | Use |
+<table>
+  <tr>
+    <td width="50%" valign="top"><img src=".wordpress-org/screenshot-2.png" alt="Tools > Term Trash"><br><sub>Tools > Term Trash</sub></td>
+    <td width="50%" valign="top"><img src=".wordpress-org/screenshot-3.png" alt="What a restore brings back"><br><sub>What a restore brings back</sub></td>
+  </tr>
+</table>
+
+## Documentation
+
+| Doc | What it covers |
 | --- | --- |
-| `term_trash_supports_taxonomy` (filter) | Return `false` to delete terms of a taxonomy for good, as WordPress normally does. Menus are never kept |
-| `term_trash_retention_days` (filter) | Days a trashed term is kept. Wins over the setting on the screen |
-| `term_trash_restored` (action) | Fires after a restore with the new term ID, taxonomy, the saved snapshot and the reattached object IDs |
+| [Reference](docs/REFERENCE.md) | Hooks, WP-CLI, the PHP API and what is stored |
+| [Development](docs/DEVELOPMENT.md) | Local setup, commands and tests |
+| [Contributing](docs/CONTRIBUTING.md) | Pull requests, required checks and PR titles |
+| [Releasing](docs/RELEASING.md) | How merged pull requests become releases |
+| [Security](docs/SECURITY.md) | Reporting a vulnerability |
+| [readme.txt](readme.txt) | What WordPress.org shows, with the FAQ and changelog |
 
-`AryanX\TermTrash\Plugin::instance()->restorer()->restore( $item_id )` restores from code.
+## Project structure
 
-## Development
-
-```sh
-composer install
-npm ci
 ```
-
-| Command | What it runs |
-| --- | --- |
-| `composer lint` | PHPCS with the WordPress standard and PHPCompatibility from PHP 7.4 |
-| `composer analyse` | PHPStan level 6 with WordPress and WP-CLI stubs |
-| `composer test` | PHPUnit unit tests. WordPress functions are mocked with Brain Monkey, so no database is needed |
-| `npm run env:start` | WordPress and MariaDB in Docker on http://localhost:8895 |
-| `npm run test:e2e` | Playwright end-to-end tests against that site, in headless Chrome |
-| `npm run screenshots` | Regenerates the screenshots in `.wordpress-org/` |
-| `npm run env:stop` | Removes the site and its database |
-
-The plugin is mounted read-only into the Docker site, so nothing in WordPress can change or delete the source. The end-to-end run empties the site's content before it starts, so point it only at this throwaway site.
-
-## Tests
-
-- **7 unit tests**: snapshot storage and type casting, the retention period and its filter, which taxonomies are kept
-- **5 end-to-end tests**: deleting a category from the Categories screen and pressing Undo, bulk delete with Undo, the trash screen (tabs, search, details, restore), bulk restore and delete, Empty trash, the retention setting, and restoring after the slug was reused
-
-Each end-to-end test checks the result in the database through WP-CLI, not only on screen: posts, child terms, term meta and menu items.
-
-## Contributing
-
-`main` is protected: every change goes through a pull request, and it can only be merged once these pass:
-
-- PHPCS and PHPStan
-- PHPUnit on PHP 7.4, 8.0, 8.1, 8.2, 8.3 and 8.4
-- the end-to-end suite against the latest WordPress
-- the WordPress.org Plugin Check on the built zip
-- the PR title check
-
-Pull requests are squash-merged, so the **PR title becomes the commit on `main`** and decides the next release. Use a [Conventional Commit](https://www.conventionalcommits.org/) title:
-
-| Title | Release |
-| --- | --- |
-| `feat: add bulk restore` | minor (1.1.0 to 1.2.0) |
-| `fix: keep the notice on narrow screens`, `perf: ...` | patch (1.1.0 to 1.1.1) |
-| `feat!: drop PHP 7.4`, or a `BREAKING CHANGE:` footer | major (1.1.0 to 2.0.0) |
-| `docs:`, `ci:`, `chore:`, `test:`, `refactor:`, `build:` | none |
-
-## Releases
-
-Releases are automatic:
-
-1. After each merge to `main`, the **Prepare release** workflow checks for `feat`, `fix`, `perf` or breaking commits since the last tag. If there are any, it opens (or updates) a `chore(release): x.y.z` pull request that bumps the version in the plugin header, the `VERSION` constant and the readme `Stable tag`, and adds the changelog entry to `readme.txt`.
-2. Merging that pull request runs the **Release** workflow: it tags `vx.y.z`, builds the zip with `bin/build-zip.sh` (leaving out everything in `.distignore`) and publishes the GitHub release with the changelog entry as notes.
-
-`bin/release.sh next` and `bin/release.sh notes` show locally what the next release would contain.
-
-Deploying to WordPress.org is off until the repository variable `WPORG_DEPLOY` is `true` and the secrets `SVN_USERNAME` and `SVN_PASSWORD` are set. The deploy uses `.wordpress-org/` for the screenshots.
+term-trash.php           plugin header and PSR-4 autoloader
+src/
+├── Plugin.php           creates the services
+├── Snapshot.php         everything about a term at the moment it was deleted
+├── Snapshotter.php      captures terms on pre_delete_term, saves on delete_term
+├── Restorer.php         puts a term, its posts, children and menu links back
+├── Trash.php            storage (a hidden post type) and queries
+├── Purger.php           daily cleanup after the retention period
+├── Admin/               trash screen, list table, Undo notices
+└── Cli/Command.php      wp term-trash
+assets/                  term screen script and styles
+tests/
+├── Unit/                PHPUnit
+└── e2e/                 Playwright specs and the Docker site
+.wordpress-org/          screenshots
+docs/                    reference, development, contributing, releasing
+```
 
 ## License
 
-GPL-2.0-or-later
+[GPL-2.0-or-later](LICENSE.md) © Aryan Jasala
