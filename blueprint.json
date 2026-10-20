@@ -1,0 +1,34 @@
+{
+	"$schema": "https://playground.wordpress.net/blueprint-schema.json",
+	"meta": {
+		"title": "Term Trash demo",
+		"author": "aryanjasala"
+	},
+	"landingPage": "/wp-admin/edit-tags.php?taxonomy=category",
+	"preferredVersions": {
+		"php": "8.3",
+		"wp": "latest"
+	},
+	"features": {
+		"networking": true
+	},
+	"login": true,
+	"steps": [
+		{
+			"step": "installPlugin",
+			"pluginData": {
+				"resource": "git:directory",
+				"url": "https://github.com/aryanjasala/term-trash",
+				"ref": "main"
+			},
+			"options": {
+				"activate": true,
+				"targetFolderName": "term-trash"
+			}
+		},
+		{
+			"step": "runPHP",
+			"code": "<?php require_once '/wordpress/wp-load.php'; $recipes = wp_insert_term( 'Recipes', 'category', array( 'description' => 'Everything we cook' ) ); wp_insert_term( 'Desserts', 'category', array( 'parent' => $recipes['term_id'] ) ); $travel = wp_insert_term( 'Travel', 'category' ); wp_insert_term( 'News', 'category' ); foreach ( array( 'Sourdough basics', 'Weeknight dal', 'Lemon tart' ) as $title ) { wp_insert_post( array( 'post_title' => $title, 'post_status' => 'publish', 'post_category' => array( $recipes['term_id'] ) ) ); } wp_insert_post( array( 'post_title' => 'Three days in Hampi', 'post_status' => 'publish', 'post_category' => array( $travel['term_id'] ) ) ); $menu = wp_create_nav_menu( 'Main menu' ); wp_update_nav_menu_item( $menu, 0, array( 'menu-item-object-id' => $recipes['term_id'], 'menu-item-object' => 'category', 'menu-item-type' => 'taxonomy', 'menu-item-status' => 'publish' ) );"
+		}
+	]
+}
