@@ -237,6 +237,8 @@ test.describe( 'Term Trash', () => {
 
 		const listed = await rest( 'GET', '/wp-abilities/v1/abilities?category=term-trash' );
 		expect( listed.body.map( ( ability ) => ability.name ).sort() ).toEqual( [ 'term-trash/delete', 'term-trash/list', 'term-trash/restore' ] );
+		// MCP clients only list abilities marked public.
+		expect( JSON.parse( wpEval( `echo wp_json_encode( array_values( array_filter( array_map( function ( $ability ) { $meta = $ability->get_meta(); return ( ! empty( $meta['public'] ) && ! empty( $meta['mcp']['public'] ) ) ? '' : $ability->get_name(); }, wp_get_abilities() ), function ( $name ) { return 0 === strpos( $name, 'term-trash/' ); } ) ) );` ) ) ).toEqual( [] );
 
 		const trashed = await rest( 'GET', `${ path( 'list' ) }?input[taxonomy]=category&input[search]=Agent` );
 		expect( trashed.status ).toBe( 200 );
