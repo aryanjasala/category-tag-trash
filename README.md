@@ -1,3 +1,5 @@
+<p align="center"><img src=".wordpress-org/icon-256x256.png" alt="" width="88"></p>
+
 <h1 align="center">Term Trash</h1>
 
 <p align="center">
@@ -17,7 +19,7 @@
 <p align="center">A trash for WordPress categories, tags and custom terms. Undo a delete in one click, or restore it later with its posts, child terms and menu links.</p>
 
 <p align="center">
-  <img src=".wordpress-org/screenshot-1.png" alt="Undo right after deleting a category" width="880">
+  <img src=".github/media/demo.gif" alt="Deleting a category, taking it back with Undo, then restoring it later from Tools > Term Trash" width="880">
 </p>
 
 ---
@@ -61,7 +63,10 @@ wp term-trash delete --all
 
 <table>
   <tr>
+    <td width="50%" valign="top"><img src=".wordpress-org/screenshot-1.png" alt="Undo right after deleting a category"><br><sub>Undo right after deleting a category</sub></td>
     <td width="50%" valign="top"><img src=".wordpress-org/screenshot-2.png" alt="Tools > Term Trash"><br><sub>Tools > Term Trash</sub></td>
+  </tr>
+  <tr>
     <td width="50%" valign="top"><img src=".wordpress-org/screenshot-3.png" alt="What a restore brings back"><br><sub>What a restore brings back</sub></td>
   </tr>
 </table>

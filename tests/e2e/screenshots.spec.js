@@ -1,15 +1,14 @@
 // Regenerates .wordpress-org/screenshot-N.png (readme.txt "== Screenshots ==" and README.md).
 // Run on demand: npm run screenshots
-const path = require( 'path' );
 const { test, expect, wp } = require( './utils' );
-
-const shot = ( page, number ) => page.screenshot( { path: path.join( __dirname, '..', '..', '.wordpress-org', `screenshot-${ number }.png` ) } );
+const { prepareSite, shot } = require( './utils/media' );
 
 test.describe.serial( 'Screenshots', () => {
-	test.use( { viewport: { width: 1280, height: 760 } } );
+	test.use( { viewport: { width: 1280, height: 760 }, deviceScaleFactor: 2 } );
 	let recipes;
 
 	test.beforeAll( () => {
+		prepareSite( 'Kitchen Notes' );
 		recipes = wp( 'term', 'create', 'category', 'Recipes', '--description=Everything we cook', '--porcelain' );
 		wp( 'term', 'create', 'category', 'Desserts', `--parent=${ recipes }` );
 		const travel = wp( 'term', 'create', 'category', 'Travel', '--porcelain' );
@@ -34,9 +33,6 @@ test.describe.serial( 'Screenshots', () => {
 		await row.locator( '.delete-tag' ).click();
 		await expect( page.locator( '.term-trash-undo' ) ).toBeVisible();
 		await expect( row ).toHaveCount( 0 );
-		await page.mouse.move( 0, 0 );
-		// Core moves focus to the next row after a delete; drop it so no outline shows.
-		await page.evaluate( () => document.activeElement.blur() );
 		await shot( page, 1 );
 	} );
 
@@ -54,6 +50,6 @@ test.describe.serial( 'Screenshots', () => {
 		const row = page.locator( '#the-list tr', { hasText: 'Recipes' } );
 		await row.locator( '.tt-details summary' ).click();
 		await row.hover();
-		await shot( page, 3 );
+		await shot( page, 3, { keepHover: true } );
 	} );
 } );
