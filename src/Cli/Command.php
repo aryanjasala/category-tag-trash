@@ -75,7 +75,7 @@ final class Command {
 		$ids  = array();
 		$page = 1;
 		do {
-			$found = $this->trash->find(
+			$found   = $this->trash->find(
 				array(
 					'taxonomy' => $assoc_args['taxonomy'] ?? '',
 					'per_page' => Trash::MAX_PER_PAGE,
