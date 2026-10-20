@@ -80,6 +80,21 @@ final class Snapshotter implements Service {
 			return;
 		}
 
+		$term = get_term( (int) $term_id, (string) $taxonomy );
+
+		/**
+		 * Filters whether one deleted term goes to Term Trash.
+		 *
+		 * The taxonomy filter (term_trash_supports_taxonomy) decides per taxonomy.
+		 * This one decides per term, for example to let empty tags go for good.
+		 *
+		 * @param bool     $keep Whether to keep the term. Default true.
+		 * @param \WP_Term $term The term being deleted.
+		 */
+		if ( ! $term instanceof \WP_Term || ! apply_filters( 'term_trash_keep_term', true, $term ) ) {
+			return;
+		}
+
 		$snapshot = $this->build( (int) $term_id, (string) $taxonomy );
 		if ( $snapshot ) {
 			$this->pending[ (int) $term_id ] = $snapshot;
@@ -108,10 +123,25 @@ final class Snapshotter implements Service {
 		$item_id = $this->trash->add( $snapshot );
 		$user_id = get_current_user_id();
 
+		if ( $item_id ) {
+			/**
+			 * Fires after a deleted term lands in Term Trash.
+			 *
+			 * @param int      $item_id  Trash item ID.
+			 * @param Snapshot $snapshot What was saved.
+			 */
+			do_action( 'term_trash_trashed', $item_id, $snapshot );
+		}
+
 		if ( $item_id && $user_id && is_admin() && ! wp_doing_ajax() ) {
 			$undo   = (array) get_transient( self::undo_key( $user_id ) );
 			$undo[] = $item_id;
-			set_transient( self::undo_key( $user_id ), array_values( array_filter( $undo ) ), 5 * MINUTE_IN_SECONDS );
+			/**
+			 * Filters how long the Undo notice after a bulk delete stays available.
+			 *
+			 * @param int $seconds Default 300.
+			 */
+			set_transient( self::undo_key( $user_id ), array_values( array_filter( $undo ) ), max( 30, (int) apply_filters( 'term_trash_undo_seconds', 5 * MINUTE_IN_SECONDS ) ) );
 		}
 	}
 

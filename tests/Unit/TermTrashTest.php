@@ -123,6 +123,15 @@ final class TermTrashTest extends TestCase {
 		$this->assertSame( 7, ( new Settings() )->retention_days() );
 	}
 
+	public function test_retention_choices_can_be_filtered_and_are_cleaned(): void {
+		Filters\expectApplied( 'term_trash_retention_choices' )->andReturn( array( 180, 0, 14, 14, 'x' ) );
+
+		$this->assertSame( array( 14, 180 ), Settings::retention_choices() );
+
+		( new Settings() )->set_retention_days( 180 );
+		$this->assertSame( 180, $this->options[ Settings::OPTION ]['retention_days'] );
+	}
+
 	public function test_only_offered_retention_periods_are_saved(): void {
 		$settings = new Settings();
 

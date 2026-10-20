@@ -329,6 +329,30 @@ final class Trash implements Service {
 	 * @return bool
 	 */
 	public function delete( int $item_id ): bool {
+		$snapshot = $this->get( $item_id );
+		if ( ! $snapshot ) {
+			return false;
+		}
+
+		/**
+		 * Fires before a trashed term is deleted for good: Empty trash, Delete
+		 * permanently, or the daily clean-up. Not when it is restored.
+		 *
+		 * @param int      $item_id  Trash item ID.
+		 * @param Snapshot $snapshot What was saved.
+		 */
+		do_action( 'term_trash_deleted', $item_id, $snapshot );
+
+		return $this->remove( $item_id );
+	}
+
+	/**
+	 * Removes a trash item without announcing it, once its term is restored.
+	 *
+	 * @param int $item_id Trash item ID.
+	 * @return bool
+	 */
+	public function remove( int $item_id ): bool {
 		return self::POST_TYPE === get_post_type( $item_id ) && (bool) wp_delete_post( $item_id, true );
 	}
 

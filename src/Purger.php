@@ -108,6 +108,15 @@ final class Purger implements Service {
 			}
 		}
 
+		if ( $deleted ) {
+			/**
+			 * Fires after the daily clean-up deleted terms past their retention period.
+			 *
+			 * @param int $deleted Number of trashed terms deleted.
+			 */
+			do_action( 'term_trash_purged', $deleted );
+		}
+
 		return $deleted;
 	}
 

@@ -16,7 +16,24 @@ final class Settings {
 
 	public const OPTION         = 'term_trash_settings';
 	public const RETENTION_DAYS = array( 7, 30, 90, 365 );
-	private const DEFAULT_DAYS  = 30;
+
+	/**
+	 * Retention periods offered on Tools > Term Trash.
+	 *
+	 * @return int[] Days, shortest first.
+	 */
+	public static function retention_choices(): array {
+		/**
+		 * Filters the retention periods offered on Tools > Term Trash.
+		 *
+		 * @param int[] $days Default 7, 30, 90 and 365.
+		 */
+		$days = array_values( array_unique( array_filter( array_map( 'absint', (array) apply_filters( 'term_trash_retention_choices', self::RETENTION_DAYS ) ) ) ) );
+		sort( $days );
+
+		return $days ? $days : self::RETENTION_DAYS;
+	}
+	private const DEFAULT_DAYS = 30;
 
 	/**
 	 * Days a trashed term is kept before it is deleted for good.
@@ -41,7 +58,7 @@ final class Settings {
 	 * @param int $days Number of days, one of RETENTION_DAYS.
 	 */
 	public function set_retention_days( int $days ): void {
-		if ( in_array( $days, self::RETENTION_DAYS, true ) ) {
+		if ( in_array( $days, self::retention_choices(), true ) ) {
 			update_option( self::OPTION, array( 'retention_days' => $days ), false );
 		}
 	}

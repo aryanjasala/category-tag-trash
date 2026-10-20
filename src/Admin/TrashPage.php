@@ -203,7 +203,7 @@ final class TrashPage implements Service {
 			<input type="hidden" name="task" value="settings">
 			<label for="tt-retention"><?php esc_html_e( 'Keep deleted terms for', 'term-trash' ); ?></label>
 			<select id="tt-retention" name="retention_days">
-				<?php foreach ( Settings::RETENTION_DAYS as $option ) : ?>
+				<?php foreach ( Settings::retention_choices() as $option ) : ?>
 					<option value="<?php echo esc_attr( (string) $option ); ?>" <?php selected( $days, $option ); ?>>
 						<?php
 						/* translators: %d: number of days. */
