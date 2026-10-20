@@ -4,7 +4,7 @@ Tags: trash, categories, tags, undo, restore
 Requires at least: 6.6
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.1.0
+Stable tag: 1.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -75,6 +75,11 @@ Yes. The posts are saved in small chunks, so the trash stays light. A restore br
 3. What a restore brings back.
 
 == Changelog ==
+
+= 1.2.0 =
+* New: add filters for which terms are kept, retention choices and the Undo window, and actions for trash events
+* Fix: keep big terms safe to delete and restore on large sites
+* Fix: update the Term Trash count right after a delete
 
 = 1.1.0 =
 * New: Undo notice right after deleting a term, for single and bulk deletes.
