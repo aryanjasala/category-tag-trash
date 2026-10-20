@@ -31,6 +31,16 @@ add_filter( 'term_trash_keep_term', fn( $keep, $term ) => $keep && $term->count 
 add_filter( 'term_trash_retention_choices', fn( $days ) => array_merge( $days, array( 14 ) ) );
 ```
 
+## Abilities
+
+On WordPress 6.9 and later, Term Trash registers [abilities](https://developer.wordpress.org/apis/abilities/), which AI agents find and run through the [MCP adapter](https://github.com/WordPress/mcp-adapter) and anything else through the REST API under `/wp-abilities/v1/`. An agent that deleted the wrong category can put it back.
+
+| Ability | Does | Needs |
+| --- | --- | --- |
+| `term-trash/list` | Read-only. Trashed terms, newest first, with what a restore brings back. Input: `taxonomy`, `search`, `limit`, `page` | the Term Trash capability. Terms of taxonomies you cannot manage are left out |
+| `term-trash/restore` | Restores trash item `id` with its posts, child terms and menu links | the Term Trash capability and the term's own taxonomy |
+| `term-trash/delete` | Deletes trash item `id` for good. Destructive, so the REST API runs it with `DELETE` | the Term Trash capability and the term's own taxonomy |
+
 ## WP-CLI
 
 ```sh

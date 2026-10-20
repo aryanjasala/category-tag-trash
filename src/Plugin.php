@@ -103,6 +103,7 @@ final class Plugin {
 			$this->purger,
 			new TrashPage( $this->trash, $this->restorer, $this->purger ),
 			new TermScreen( $this->trash, $this->restorer ),
+			new Abilities( $this->trash, $this->restorer ),
 		);
 
 		foreach ( $services as $service ) {
