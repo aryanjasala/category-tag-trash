@@ -34,6 +34,63 @@ final class TermTrashTest extends TestCase {
 		$this->assertSame( array( 40, 41 ), $copy->object_ids() );
 	}
 
+	public function test_objects_are_packed_in_chunks_with_a_sample(): void {
+		$snapshot = new Snapshot();
+		$pairs    = array();
+		for ( $id = 1; $id <= Snapshot::CHUNK + 5; $id++ ) {
+			$pairs[] = array( $id, $id % 3 );
+		}
+
+		$snapshot->add_objects( $pairs );
+		$snapshot->add_fallback_objects( array( 2, 4, 6 ) );
+
+		$this->assertSame( Snapshot::CHUNK + 5, $snapshot->total_objects() );
+		$this->assertCount( 2, $snapshot->object_chunks );
+		$this->assertSame( range( 1, Snapshot::SAMPLE ), $snapshot->sample() );
+		$this->assertSame( array_slice( $pairs, Snapshot::CHUNK ), Snapshot::unpack_pairs( $snapshot->object_chunks[1] ) );
+		$this->assertSame( array( '2,4,6' ), $snapshot->fallback_chunks );
+	}
+
+	public function test_packed_chunks_are_not_stored_inside_the_snapshot(): void {
+		$snapshot           = new Snapshot();
+		$snapshot->term_id  = 12;
+		$snapshot->taxonomy = 'post_tag';
+		$snapshot->add_objects( array( array( 40, 0 ), array( 41, 2 ) ) );
+
+		$data = $snapshot->to_array();
+
+		$this->assertSame( 3, $data['version'] );
+		$this->assertArrayNotHasKey( 'object_chunks', $data );
+		$this->assertArrayNotHasKey( 'fallback_chunks', $data );
+		$this->assertSame( 2, Snapshot::from_array( $data )->total_objects() );
+		$this->assertSame( array( 40, 41 ), Snapshot::from_array( $data )->sample() );
+	}
+
+	public function test_snapshots_from_1_1_0_still_give_their_objects_as_chunks(): void {
+		Functions\when( 'wp_list_pluck' )->alias( 'array_column' );
+
+		$old = Snapshot::from_array(
+			array(
+				'version'          => 2,
+				'term_id'          => 12,
+				'taxonomy'         => 'category',
+				'objects'          => array( array( 40, 0 ), array( 41, 2 ) ),
+				'fallback_objects' => array( 41 ),
+			)
+		);
+
+		$this->assertSame( 2, $old->total_objects() );
+		$this->assertSame( array( 40, 41 ), $old->sample() );
+		$this->assertSame( array( '40:0,41:2' ), $old->legacy_object_chunks() );
+		$this->assertSame( array( '41' ), $old->legacy_fallback_chunks() );
+	}
+
+	public function test_unpacking_ignores_empty_and_broken_entries(): void {
+		$this->assertSame( array(), Snapshot::unpack_pairs( '' ) );
+		$this->assertSame( array( array( 7, 0 ), array( 9, 3 ) ), Snapshot::unpack_pairs( '7,9:3,:4,0:1' ) );
+		$this->assertSame( array( 5, 6 ), Snapshot::unpack_ids( '5,,6,x' ) );
+	}
+
 	public function test_snapshot_casts_stored_values_to_their_types(): void {
 		$snapshot = Snapshot::from_array(
 			array(

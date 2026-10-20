@@ -18,7 +18,15 @@ defined( 'ABSPATH' ) || exit;
  */
 final class Snapshotter implements Service {
 
-	private const BATCH = 500;
+	/**
+	 * Relationship rows read per query while capturing.
+	 */
+	private const BATCH = Snapshot::CHUNK;
+
+	/**
+	 * Most menu links to one term that are captured.
+	 */
+	private const MENU_LINKS = 100;
 
 	/**
 	 * Trashed terms.
@@ -122,13 +130,6 @@ final class Snapshotter implements Service {
 			return null;
 		}
 
-		// Raw relationship rows keep term_order, which the term APIs drop.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$rows = $wpdb->get_results(
-			$wpdb->prepare( "SELECT object_id, term_order FROM {$wpdb->term_relationships} WHERE term_taxonomy_id = %d", $term->term_taxonomy_id ),
-			ARRAY_N
-		);
-
 		$snapshot                   = new Snapshot();
 		$snapshot->term_id          = (int) $term->term_id;
 		$snapshot->term_taxonomy_id = (int) $term->term_taxonomy_id;
@@ -153,13 +154,38 @@ final class Snapshotter implements Service {
 			)
 		);
 
-		foreach ( $rows as $row ) {
-			$snapshot->objects[] = array( (int) $row[0], (int) $row[1] );
-		}
+		// Read the relationships a page at a time and keep them packed, so a term
+		// on a million posts costs a few MB of strings, not a few hundred MB of arrays.
+		$after = 0;
+		do {
+			// Raw relationship rows keep term_order, which the term APIs drop.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$rows = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT object_id, term_order FROM {$wpdb->term_relationships} WHERE term_taxonomy_id = %d AND object_id > %d ORDER BY object_id ASC LIMIT %d",
+					$term->term_taxonomy_id,
+					$after,
+					self::BATCH
+				),
+				ARRAY_N
+			);
 
-		if ( $snapshot->default_term ) {
-			$snapshot->fallback_objects = $this->sole_term_objects( $snapshot->object_ids(), $taxonomy );
-		}
+			$pairs = array();
+			foreach ( $rows as $row ) {
+				$pairs[] = array( (int) $row[0], (int) $row[1] );
+			}
+			if ( ! $pairs ) {
+				break;
+			}
+
+			$snapshot->add_objects( $pairs );
+			if ( $snapshot->default_term ) {
+				$snapshot->add_fallback_objects( $this->sole_term_objects( wp_list_pluck( $pairs, 0 ), $taxonomy ) );
+			}
+
+			$after   = (int) end( $pairs )[0];
+			$fetched = count( $pairs );
+		} while ( self::BATCH === $fetched );
 
 		return $snapshot;
 	}
@@ -193,7 +219,7 @@ final class Snapshotter implements Service {
 		global $wpdb;
 
 		$sole = array();
-		foreach ( array_chunk( $object_ids, self::BATCH ) as $chunk ) {
+		foreach ( array_chunk( array_map( 'intval', $object_ids ), self::BATCH ) as $chunk ) {
 			$placeholders = implode( ',', array_fill( 0, count( $chunk ), '%d' ) );
 
 			// phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- Placeholders are built from the chunk size.
@@ -226,7 +252,7 @@ final class Snapshotter implements Service {
 			array(
 				'post_type'   => 'nav_menu_item',
 				'post_status' => 'any',
-				'numberposts' => -1,
+				'numberposts' => self::MENU_LINKS,
 				// Menu items keep their target in meta; there is no other index.
 				// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
 				'meta_query'  => array(
@@ -270,7 +296,7 @@ final class Snapshotter implements Service {
 						array(
 							'post_type'   => 'nav_menu_item',
 							'post_status' => 'any',
-							'numberposts' => -1,
+							'numberposts' => self::MENU_LINKS,
 							'fields'      => 'ids',
 							// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key, WordPress.DB.SlowDBQuery.slow_db_query_meta_value
 							'meta_key'    => '_menu_item_menu_item_parent',

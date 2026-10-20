@@ -7,6 +7,7 @@
 
 namespace AryanX\TermTrash\Admin;
 
+use AryanX\TermTrash\Purger;
 use AryanX\TermTrash\Restorer;
 use AryanX\TermTrash\Service;
 use AryanX\TermTrash\Settings;
@@ -39,14 +40,39 @@ final class TrashPage implements Service {
 	private Restorer $restorer;
 
 	/**
+	 * Purging and emptying.
+	 *
+	 * @var Purger
+	 */
+	private Purger $purger;
+
+	/**
 	 * Sets up the screen.
 	 *
 	 * @param Trash    $trash    Trashed terms.
 	 * @param Restorer $restorer Restore logic.
+	 * @param Purger   $purger   Purging and emptying.
 	 */
-	public function __construct( Trash $trash, Restorer $restorer ) {
+	public function __construct( Trash $trash, Restorer $restorer, Purger $purger ) {
 		$this->trash    = $trash;
 		$this->restorer = $restorer;
+		$this->purger   = $purger;
+	}
+
+	/**
+	 * Capability needed to open Tools > Term Trash.
+	 *
+	 * Each restore and delete still checks the term's own taxonomy.
+	 *
+	 * @return string
+	 */
+	public static function capability(): string {
+		/**
+		 * Filters the capability needed to open Tools > Term Trash.
+		 *
+		 * @param string $capability Capability. Default manage_categories.
+		 */
+		return (string) apply_filters( 'term_trash_capability', 'manage_categories' );
 	}
 
 	/**
@@ -91,7 +117,7 @@ final class TrashPage implements Service {
 		$hook = add_management_page(
 			__( 'Term Trash', 'term-trash' ),
 			__( 'Term Trash', 'term-trash' ),
-			'manage_categories',
+			self::capability(),
 			self::SLUG,
 			array( $this, 'render' )
 		);
@@ -126,7 +152,7 @@ final class TrashPage implements Service {
 					<?php wp_nonce_field( self::ACTION . '_empty' ); ?>
 					<input type="hidden" name="action" value="<?php echo esc_attr( self::ACTION ); ?>">
 					<input type="hidden" name="task" value="empty">
-					<button type="submit" class="page-title-action tt-empty"><?php esc_html_e( 'Empty trash', 'term-trash' ); ?></button>
+					<button type="submit" class="page-title-action tt-empty" onclick="return window.confirm( '<?php echo esc_js( __( 'Delete everything in Term Trash for good? This cannot be undone.', 'term-trash' ) ); ?>' );"><?php esc_html_e( 'Empty trash', 'term-trash' ); ?></button>
 				</form>
 			<?php endif; ?>
 			<hr class="wp-header-end">
@@ -288,7 +314,22 @@ final class TrashPage implements Service {
 
 		if ( 'empty' === $task ) {
 			check_admin_referer( self::ACTION . '_empty' );
-			$this->run( 'delete', $this->trash->find()['ids'], $back );
+			// Site admins empty everything, the rest in the background. Others only what they may manage.
+			$result = $this->purger->empty_trash( 200, current_user_can( 'manage_options' ) ? null : array( $this->trash, 'user_can_manage' ) );
+			$args   = array( 'tt_deleted' => $result['deleted'] );
+			if ( $result['remaining'] && current_user_can( 'manage_options' ) ) {
+				$args['tt_notes'] = array(
+					rawurlencode(
+						sprintf(
+							/* translators: %s: number of trashed terms. */
+							_n( 'The last %s term is being deleted in the background.', 'The other %s terms are being deleted in the background.', $result['remaining'], 'term-trash' ),
+							number_format_i18n( $result['remaining'] )
+						)
+					),
+				);
+			}
+			wp_safe_redirect( add_query_arg( array_filter( $args ), $back ) );
+			exit;
 		}
 
 		check_admin_referer( self::ACTION . '_' . $task . '_' . $items );
