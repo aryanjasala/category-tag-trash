@@ -32,7 +32,9 @@ abstract class TestCase extends \PHPUnit\Framework\TestCase {
 		Functions\stubTranslationFunctions();
 		Functions\stubEscapeFunctions();
 
-		$this->options = array();
+		$this->options     = array();
+		\WP_Query::$queue = array();
+		\WP_Query::$made  = array();
 		Functions\when( 'get_option' )->alias(
 			function ( $name, $default = false ) {
 				return array_key_exists( $name, $this->options ) ? $this->options[ $name ] : $default;
@@ -47,6 +49,15 @@ abstract class TestCase extends \PHPUnit\Framework\TestCase {
 		Functions\when( 'delete_option' )->alias(
 			function ( $name ) {
 				unset( $this->options[ $name ] );
+				return true;
+			}
+		);
+		Functions\when( 'add_option' )->alias(
+			function ( $name, $value = '' ) {
+				if ( array_key_exists( $name, $this->options ) ) {
+					return false;
+				}
+				$this->options[ $name ] = $value;
 				return true;
 			}
 		);
