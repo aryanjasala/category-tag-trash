@@ -13,6 +13,15 @@
 		return template.replace( '%s', value );
 	}
 
+	// The "View Term Trash (N)" link under the table is rendered on page load, so keep it in step.
+	function bumpTrashCount() {
+		$( '.term-trash-note a' ).text( function ( index, text ) {
+			return text.replace( /\((\d+)\)/, function ( match, count ) {
+				return '(' + ( Number( count ) + 1 ) + ')';
+			} );
+		} );
+	}
+
 	function showNotice( termId, taxonomy, name ) {
 		var $notice = $( '<div class="notice notice-success is-dismissible term-trash-undo"><p></p></div>' );
 		var $text = $( '<span></span>' ).text( format( settings.i18n.moved, name ) + ' ' );
@@ -63,5 +72,6 @@
 
 		var params = new URLSearchParams( ajaxSettings.data );
 		showNotice( params.get( 'tag_ID' ), params.get( 'taxonomy' ), lastName );
+		bumpTrashCount();
 	} );
 } )( jQuery, window.termTrashScreen );

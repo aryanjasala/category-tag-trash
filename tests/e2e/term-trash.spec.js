@@ -48,6 +48,7 @@ test.describe( 'Term Trash', () => {
 
 		const notice = page.locator( '.term-trash-undo' );
 		await expect( notice ).toContainText( '"Undo Recipes" moved to Term Trash.' );
+		await expect( page.locator( '.term-trash-note a' ) ).toHaveText( 'View Term Trash (1)' );
 		await expect( row ).toHaveCount( 0 );
 		expect( categoriesOf( ids.only ) ).toEqual( [ 'Uncategorized' ] );
 
