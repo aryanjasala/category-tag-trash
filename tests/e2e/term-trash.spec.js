@@ -228,6 +228,38 @@ test.describe( 'Term Trash', () => {
 		expect( wpEval( `global $wpdb; echo (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->term_relationships} WHERE object_id = ${ ids[ 0 ] } + 3 AND term_order = 3" );` ) ).toBe( '1' );
 	} );
 
+	test( 'abilities: an agent can list, restore and delete trashed terms', async ( { rest } ) => {
+		const ids = seed( 'Agent' );
+		wp( 'term', 'delete', 'category', String( ids.cat ) );
+		const tag = wp( 'term', 'create', 'post_tag', 'Agent tag', '--porcelain' );
+		wp( 'term', 'delete', 'post_tag', tag );
+		const path = ( name ) => `/wp-abilities/v1/abilities/term-trash/${ name }/run`;
+
+		const listed = await rest( 'GET', '/wp-abilities/v1/abilities?category=term-trash' );
+		expect( listed.body.map( ( ability ) => ability.name ).sort() ).toEqual( [ 'term-trash/delete', 'term-trash/list', 'term-trash/restore' ] );
+
+		const trashed = await rest( 'GET', `${ path( 'list' ) }?input[taxonomy]=category&input[search]=Agent` );
+		expect( trashed.status ).toBe( 200 );
+		expect( trashed.body.items ).toHaveLength( 1 );
+		const item = trashed.body.items[ 0 ];
+		expect( item ).toMatchObject( { term_id: ids.cat, name: 'Agent Recipes', taxonomy: 'category', objects: 2, children: 1, menu_links: 1 } );
+
+		const missing = await rest( 'POST', path( 'restore' ), { input: { id: 999999 } } );
+		expect( missing.body.code ).toBe( 'term_trash_missing' );
+
+		const restored = await rest( 'POST', path( 'restore' ), { input: { id: item.id } } );
+		expect( restored.status ).toBe( 200 );
+		expect( restored.body ).toMatchObject( { term_id: ids.cat, background: false } );
+		expectFullyRestored( ids, 'Agent' );
+
+		// Deleting for good is destructive, so the Abilities API runs it with DELETE.
+		const tagItem = ( await rest( 'GET', `${ path( 'list' ) }?input[taxonomy]=post_tag` ) ).body.items[ 0 ];
+		const deleted = await rest( 'DELETE', `${ path( 'delete' ) }?input[id]=${ tagItem.id }` );
+		expect( deleted.status ).toBe( 200 );
+		expect( deleted.body ).toEqual( { deleted: true } );
+		expect( ( await rest( 'GET', path( 'list' ) ) ).body.total ).toBe( 0 );
+	} );
+
 	test( 'restores under a new slug when the old one was reused, from WP-CLI', () => {
 		const id = wp( 'term', 'create', 'category', 'Reused', '--porcelain' );
 		wp( 'term', 'delete', 'category', id );
