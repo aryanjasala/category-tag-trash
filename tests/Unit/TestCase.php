@@ -2,10 +2,10 @@
 /**
  * Base class for unit tests.
  *
- * @package AryanX\TermTrash
+ * @package AryanX\CategoryTagTrash
  */
 
-namespace AryanX\TermTrash\Tests\Unit;
+namespace AryanX\CategoryTagTrash\Tests\Unit;
 
 use Brain\Monkey;
 use Brain\Monkey\Functions;

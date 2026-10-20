@@ -2,7 +2,7 @@
 parameters:
 	level: 6
 	paths:
-		- term-trash.php
+		- category-tag-trash.php
 		- uninstall.php
 		- src
 	scanFiles:

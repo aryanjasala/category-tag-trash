@@ -2,14 +2,14 @@
 /**
  * Plugin bootstrap.
  *
- * @package AryanX\TermTrash
+ * @package AryanX\CategoryTagTrash
  */
 
-namespace AryanX\TermTrash;
+namespace AryanX\CategoryTagTrash;
 
-use AryanX\TermTrash\Admin\TermScreen;
-use AryanX\TermTrash\Admin\TrashPage;
-use AryanX\TermTrash\Cli\Command;
+use AryanX\CategoryTagTrash\Admin\TermScreen;
+use AryanX\CategoryTagTrash\Admin\TrashPage;
+use AryanX\CategoryTagTrash\Cli\Command;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -111,7 +111,7 @@ final class Plugin {
 		}
 
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
-			\WP_CLI::add_command( 'term-trash', new Command( $this->trash, $this->restorer, $this->purger ) );
+			\WP_CLI::add_command( 'category-tag-trash', new Command( $this->trash, $this->restorer, $this->purger ) );
 		}
 	}
 }

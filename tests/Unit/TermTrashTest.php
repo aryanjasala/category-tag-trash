@@ -2,18 +2,18 @@
 /**
  * Tests for snapshots, retention and which taxonomies are kept.
  *
- * @package AryanX\TermTrash
+ * @package AryanX\CategoryTagTrash
  */
 
-namespace AryanX\TermTrash\Tests\Unit;
+namespace AryanX\CategoryTagTrash\Tests\Unit;
 
-use AryanX\TermTrash\Settings;
-use AryanX\TermTrash\Snapshot;
-use AryanX\TermTrash\Trash;
+use AryanX\CategoryTagTrash\Settings;
+use AryanX\CategoryTagTrash\Snapshot;
+use AryanX\CategoryTagTrash\Trash;
 use Brain\Monkey\Filters;
 use Brain\Monkey\Functions;
 
-final class TermTrashTest extends TestCase {
+final class CategoryTagTrashTest extends TestCase {
 
 	public function test_snapshot_round_trips_through_stored_data(): void {
 		Functions\when( 'wp_list_pluck' )->alias( 'array_column' );
@@ -119,12 +119,12 @@ final class TermTrashTest extends TestCase {
 		$this->options[ Settings::OPTION ] = array( 'retention_days' => 90 );
 		$this->assertSame( 90, ( new Settings() )->retention_days() );
 
-		Filters\expectApplied( 'term_trash_retention_days' )->once()->with( 90 )->andReturn( 7 );
+		Filters\expectApplied( 'category_tag_trash_retention_days' )->once()->with( 90 )->andReturn( 7 );
 		$this->assertSame( 7, ( new Settings() )->retention_days() );
 	}
 
 	public function test_retention_choices_can_be_filtered_and_are_cleaned(): void {
-		Filters\expectApplied( 'term_trash_retention_choices' )->andReturn( array( 180, 0, 14, 14, 'x' ) );
+		Filters\expectApplied( 'category_tag_trash_retention_choices' )->andReturn( array( 180, 0, 14, 14, 'x' ) );
 
 		$this->assertSame( array( 14, 180 ), Settings::retention_choices() );
 

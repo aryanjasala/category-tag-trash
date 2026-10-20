@@ -1,19 +1,19 @@
 <?php
 /**
- * Tools > Term Trash.
+ * Tools > Category & Tag Trash.
  *
- * @package AryanX\TermTrash
+ * @package AryanX\CategoryTagTrash
  */
 
-namespace AryanX\TermTrash\Admin;
+namespace AryanX\CategoryTagTrash\Admin;
 
-use AryanX\TermTrash\Purger;
-use AryanX\TermTrash\Restorer;
-use AryanX\TermTrash\Service;
-use AryanX\TermTrash\Settings;
-use AryanX\TermTrash\Trash;
-use const AryanX\TermTrash\PLUGIN_FILE;
-use const AryanX\TermTrash\VERSION;
+use AryanX\CategoryTagTrash\Purger;
+use AryanX\CategoryTagTrash\Restorer;
+use AryanX\CategoryTagTrash\Service;
+use AryanX\CategoryTagTrash\Settings;
+use AryanX\CategoryTagTrash\Trash;
+use const AryanX\CategoryTagTrash\PLUGIN_FILE;
+use const AryanX\CategoryTagTrash\VERSION;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -22,8 +22,8 @@ defined( 'ABSPATH' ) || exit;
  */
 final class TrashPage implements Service {
 
-	public const SLUG   = 'term-trash';
-	public const ACTION = 'term_trash';
+	public const SLUG   = 'category-tag-trash';
+	public const ACTION = 'category_tag_trash';
 
 	/**
 	 * Trashed terms.
@@ -60,7 +60,7 @@ final class TrashPage implements Service {
 	}
 
 	/**
-	 * Capability needed to open Tools > Term Trash.
+	 * Capability needed to open Tools > Category & Tag Trash.
 	 *
 	 * Each restore and delete still checks the term's own taxonomy.
 	 *
@@ -68,11 +68,11 @@ final class TrashPage implements Service {
 	 */
 	public static function capability(): string {
 		/**
-		 * Filters the capability needed to open Tools > Term Trash.
+		 * Filters the capability needed to open Tools > Category & Tag Trash.
 		 *
 		 * @param string $capability Capability. Default manage_categories.
 		 */
-		return (string) apply_filters( 'term_trash_capability', 'manage_categories' );
+		return (string) apply_filters( 'category_tag_trash_capability', 'manage_categories' );
 	}
 
 	/**
@@ -111,12 +111,12 @@ final class TrashPage implements Service {
 	}
 
 	/**
-	 * Registers Tools > Term Trash, and handles bulk actions before output.
+	 * Registers Tools > Category & Tag Trash, and handles bulk actions before output.
 	 */
 	public function add_page(): void {
 		$hook = add_management_page(
-			__( 'Term Trash', 'term-trash' ),
-			__( 'Term Trash', 'term-trash' ),
+			__( 'Category & Tag Trash', 'category-tag-trash' ),
+			__( 'Category & Tag Trash', 'category-tag-trash' ),
 			self::capability(),
 			self::SLUG,
 			array( $this, 'render' )
@@ -132,7 +132,7 @@ final class TrashPage implements Service {
 	 * Screen styles.
 	 */
 	public function enqueue_styles(): void {
-		wp_enqueue_style( 'term-trash-admin', plugins_url( 'assets/admin.css', PLUGIN_FILE ), array(), VERSION );
+		wp_enqueue_style( 'category-tag-trash-admin', plugins_url( 'assets/admin.css', PLUGIN_FILE ), array(), VERSION );
 	}
 
 	/**
@@ -145,27 +145,27 @@ final class TrashPage implements Service {
 		$table->prepare_items();
 		$days = $this->trash->settings()->retention_days();
 		?>
-		<div class="wrap tt-page">
-			<h1 class="wp-heading-inline"><?php esc_html_e( 'Term Trash', 'term-trash' ); ?></h1>
+		<div class="wrap ctt-page">
+			<h1 class="wp-heading-inline"><?php esc_html_e( 'Category & Tag Trash', 'category-tag-trash' ); ?></h1>
 			<?php if ( $table->has_items() ) : ?>
-				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="tt-inline">
+				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="ctt-inline">
 					<?php wp_nonce_field( self::ACTION . '_empty' ); ?>
 					<input type="hidden" name="action" value="<?php echo esc_attr( self::ACTION ); ?>">
 					<input type="hidden" name="task" value="empty">
-					<button type="submit" class="page-title-action tt-empty" onclick="return window.confirm( '<?php echo esc_js( __( 'Delete everything in Term Trash for good? This cannot be undone.', 'term-trash' ) ); ?>' );"><?php esc_html_e( 'Empty trash', 'term-trash' ); ?></button>
+					<button type="submit" class="page-title-action ctt-empty" onclick="return window.confirm( '<?php echo esc_js( __( 'Delete everything in Category & Tag Trash for good? This cannot be undone.', 'category-tag-trash' ) ); ?>' );"><?php esc_html_e( 'Empty trash', 'category-tag-trash' ); ?></button>
 				</form>
 			<?php endif; ?>
 			<hr class="wp-header-end">
 
 			<?php $this->render_notices(); ?>
 
-			<div class="tt-intro">
+			<div class="ctt-intro">
 				<p>
 					<?php
 					echo esc_html(
 						sprintf(
 							/* translators: %d: number of days. */
-							_n( 'Deleted categories, tags and other terms are kept here for %d day, then deleted for good.', 'Deleted categories, tags and other terms are kept here for %d days, then deleted for good.', $days, 'term-trash' ),
+							_n( 'Deleted categories, tags and other terms are kept here for %d day, then deleted for good.', 'Deleted categories, tags and other terms are kept here for %d days, then deleted for good.', $days, 'category-tag-trash' ),
 							$days
 						)
 					);
@@ -180,7 +180,7 @@ final class TrashPage implements Service {
 				<?php if ( $table->current_taxonomy() ) : ?>
 					<input type="hidden" name="taxonomy" value="<?php echo esc_attr( $table->current_taxonomy() ); ?>">
 				<?php endif; ?>
-				<?php $table->search_box( __( 'Search trash', 'term-trash' ), 'term-trash' ); ?>
+				<?php $table->search_box( __( 'Search trash', 'category-tag-trash' ), 'category-tag-trash' ); ?>
 				<?php $table->display(); ?>
 			</form>
 		</div>
@@ -197,22 +197,22 @@ final class TrashPage implements Service {
 			return;
 		}
 		?>
-		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="tt-retention">
+		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="ctt-retention">
 			<?php wp_nonce_field( self::ACTION . '_settings' ); ?>
 			<input type="hidden" name="action" value="<?php echo esc_attr( self::ACTION ); ?>">
 			<input type="hidden" name="task" value="settings">
-			<label for="tt-retention"><?php esc_html_e( 'Keep deleted terms for', 'term-trash' ); ?></label>
-			<select id="tt-retention" name="retention_days">
+			<label for="ctt-retention"><?php esc_html_e( 'Keep deleted terms for', 'category-tag-trash' ); ?></label>
+			<select id="ctt-retention" name="retention_days">
 				<?php foreach ( Settings::retention_choices() as $option ) : ?>
 					<option value="<?php echo esc_attr( (string) $option ); ?>" <?php selected( $days, $option ); ?>>
 						<?php
 						/* translators: %d: number of days. */
-						echo esc_html( sprintf( _n( '%d day', '%d days', $option, 'term-trash' ), $option ) );
+						echo esc_html( sprintf( _n( '%d day', '%d days', $option, 'category-tag-trash' ), $option ) );
 						?>
 					</option>
 				<?php endforeach; ?>
 			</select>
-			<button type="submit" class="button"><?php esc_html_e( 'Save', 'term-trash' ); ?></button>
+			<button type="submit" class="button"><?php esc_html_e( 'Save', 'category-tag-trash' ); ?></button>
 		</form>
 		<?php
 	}
@@ -222,22 +222,22 @@ final class TrashPage implements Service {
 	 */
 	private function render_notices(): void {
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Display-only values set by our own redirect.
-		$restored = isset( $_GET['tt_restored'] ) ? array_filter( array_map( 'absint', explode( ',', sanitize_text_field( wp_unslash( $_GET['tt_restored'] ) ) ) ) ) : array();
-		$deleted  = isset( $_GET['tt_deleted'] ) ? absint( $_GET['tt_deleted'] ) : 0;
-		$saved    = isset( $_GET['tt_saved'] );
-		$notes    = isset( $_GET['tt_notes'] ) ? array_map( 'sanitize_text_field', (array) wp_unslash( $_GET['tt_notes'] ) ) : array();
-		$errors   = isset( $_GET['tt_errors'] ) ? array_map( 'sanitize_text_field', (array) wp_unslash( $_GET['tt_errors'] ) ) : array();
+		$restored = isset( $_GET['ctt_restored'] ) ? array_filter( array_map( 'absint', explode( ',', sanitize_text_field( wp_unslash( $_GET['ctt_restored'] ) ) ) ) ) : array();
+		$deleted  = isset( $_GET['ctt_deleted'] ) ? absint( $_GET['ctt_deleted'] ) : 0;
+		$saved    = isset( $_GET['ctt_saved'] );
+		$notes    = isset( $_GET['ctt_notes'] ) ? array_map( 'sanitize_text_field', (array) wp_unslash( $_GET['ctt_notes'] ) ) : array();
+		$errors   = isset( $_GET['ctt_errors'] ) ? array_map( 'sanitize_text_field', (array) wp_unslash( $_GET['ctt_errors'] ) ) : array();
 		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
 		self::print_restored_notice( $restored, $notes );
 
 		if ( $deleted ) {
 			/* translators: %d: number of terms. */
-			printf( '<div class="notice notice-success is-dismissible"><p>%s</p></div>', esc_html( sprintf( _n( '%d term deleted for good.', '%d terms deleted for good.', $deleted, 'term-trash' ), $deleted ) ) );
+			printf( '<div class="notice notice-success is-dismissible"><p>%s</p></div>', esc_html( sprintf( _n( '%d term deleted for good.', '%d terms deleted for good.', $deleted, 'category-tag-trash' ), $deleted ) ) );
 		}
 
 		if ( $saved ) {
-			printf( '<div class="notice notice-success is-dismissible"><p>%s</p></div>', esc_html__( 'Settings saved.', 'term-trash' ) );
+			printf( '<div class="notice notice-success is-dismissible"><p>%s</p></div>', esc_html__( 'Settings saved.', 'category-tag-trash' ) );
 		}
 
 		foreach ( $errors as $error ) {
@@ -264,9 +264,9 @@ final class TrashPage implements Service {
 			return;
 		}
 
-		echo '<div class="notice notice-success is-dismissible tt-restored"><p>';
+		echo '<div class="notice notice-success is-dismissible ctt-restored"><p>';
 		/* translators: %s: list of restored term names. */
-		printf( esc_html__( 'Restored %s.', 'term-trash' ), wp_kses( implode( ', ', $links ), array( 'a' => array( 'href' => array() ) ) ) );
+		printf( esc_html__( 'Restored %s.', 'category-tag-trash' ), wp_kses( implode( ', ', $links ), array( 'a' => array( 'href' => array() ) ) ) );
 		echo '</p>';
 		foreach ( $notes as $note ) {
 			echo '<p>' . esc_html( $note ) . '</p>';
@@ -290,7 +290,7 @@ final class TrashPage implements Service {
 			return;
 		}
 
-		check_admin_referer( 'bulk-term_trash_items' );
+		check_admin_referer( 'bulk-category_tag_trash_items' );
 		$this->run( $action, $item_ids, admin_url( 'tools.php?page=' . self::SLUG ) );
 	}
 
@@ -305,10 +305,10 @@ final class TrashPage implements Service {
 		if ( 'settings' === $task ) {
 			check_admin_referer( self::ACTION . '_settings' );
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_die( esc_html__( 'Sorry, you are not allowed to change this setting.', 'term-trash' ), 403 );
+				wp_die( esc_html__( 'Sorry, you are not allowed to change this setting.', 'category-tag-trash' ), 403 );
 			}
 			$this->trash->settings()->set_retention_days( isset( $_POST['retention_days'] ) ? absint( $_POST['retention_days'] ) : 30 );
-			wp_safe_redirect( add_query_arg( 'tt_saved', '1', $back ) );
+			wp_safe_redirect( add_query_arg( 'ctt_saved', '1', $back ) );
 			exit;
 		}
 
@@ -316,13 +316,13 @@ final class TrashPage implements Service {
 			check_admin_referer( self::ACTION . '_empty' );
 			// Site admins empty everything, the rest in the background. Others only what they may manage.
 			$result = $this->purger->empty_trash( 200, current_user_can( 'manage_options' ) ? null : array( $this->trash, 'user_can_manage' ) );
-			$args   = array( 'tt_deleted' => $result['deleted'] );
+			$args   = array( 'ctt_deleted' => $result['deleted'] );
 			if ( $result['remaining'] && current_user_can( 'manage_options' ) ) {
-				$args['tt_notes'] = array(
+				$args['ctt_notes'] = array(
 					rawurlencode(
 						sprintf(
 							/* translators: %s: number of trashed terms. */
-							_n( 'The last %s term is being deleted in the background.', 'The other %s terms are being deleted in the background.', $result['remaining'], 'term-trash' ),
+							_n( 'The last %s term is being deleted in the background.', 'The other %s terms are being deleted in the background.', $result['remaining'], 'category-tag-trash' ),
 							number_format_i18n( $result['remaining'] )
 						)
 					),
@@ -354,9 +354,9 @@ final class TrashPage implements Service {
 		if ( 'restore' === $task ) {
 			$result = $this->restorer->restore_many( $item_ids );
 			$args   = array(
-				'tt_restored' => implode( ',', $result['restored'] ),
-				'tt_notes'    => array_map( 'rawurlencode', $result['notes'] ),
-				'tt_errors'   => array_map( 'rawurlencode', $result['errors'] ),
+				'ctt_restored' => implode( ',', $result['restored'] ),
+				'ctt_notes'    => array_map( 'rawurlencode', $result['notes'] ),
+				'ctt_errors'   => array_map( 'rawurlencode', $result['errors'] ),
 			);
 		} elseif ( 'delete' === $task ) {
 			$deleted = 0;
@@ -366,7 +366,7 @@ final class TrashPage implements Service {
 					$deleted += (int) $this->trash->delete( $item_id );
 				}
 			}
-			$args = array( 'tt_deleted' => $deleted );
+			$args = array( 'ctt_deleted' => $deleted );
 		}
 
 		wp_safe_redirect( add_query_arg( array_filter( $args ), $back ) );

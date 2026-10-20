@@ -1,7 +1,7 @@
 <?php
 /**
- * Plugin Name:       Term Trash
- * Plugin URI:        https://wordpress.org/plugins/term-trash/
+ * Plugin Name:       Category & Tag Trash
+ * Plugin URI:        https://wordpress.org/plugins/category-tag-trash/
  * Description:       Deleted categories, tags and custom terms go to a trash instead of disappearing. Undo a delete in one click, or restore later with the term's posts, child terms and menu links.
  * Version:           1.3.0
  * Requires at least: 6.6
@@ -10,19 +10,19 @@
  * Author URI:        https://profiles.wordpress.org/aryanjasala/
  * License:           GPL-2.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain:       term-trash
+ * Text Domain:       category-tag-trash
  *
- * @package AryanX\TermTrash
+ * @package AryanX\CategoryTagTrash
  */
 
-namespace AryanX\TermTrash;
+namespace AryanX\CategoryTagTrash;
 
 defined( 'ABSPATH' ) || exit;
 
 const VERSION     = '1.3.0';
 const PLUGIN_FILE = __FILE__;
 
-// PSR-4: AryanX\TermTrash\Foo\Bar lives in src/Foo/Bar.php.
+// PSR-4: AryanX\CategoryTagTrash\Foo\Bar lives in src/Foo/Bar.php.
 spl_autoload_register(
 	static function ( $class_name ) {
 		$prefix = __NAMESPACE__ . '\\';
