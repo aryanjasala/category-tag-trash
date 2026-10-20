@@ -229,6 +229,7 @@ test.describe( 'Category & Tag Trash', () => {
 	} );
 
 	test( 'abilities: an agent can list, restore and delete trashed terms', async ( { rest } ) => {
+		test.skip( 'yes' !== wpEval( "echo function_exists( 'wp_register_ability' ) ? 'yes' : 'no';" ), 'The Abilities API needs WordPress 6.9.' );
 		const ids = seed( 'Agent' );
 		wp( 'term', 'delete', 'category', String( ids.cat ) );
 		const tag = wp( 'term', 'create', 'post_tag', 'Agent tag', '--porcelain' );
