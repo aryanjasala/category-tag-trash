@@ -1,0 +1,17 @@
+{
+  "name": "term-trash",
+  "private": true,
+  "description": "A trash for WordPress categories, tags and custom terms, with undo and full restore.",
+  "license": "GPL-2.0-or-later",
+  "scripts": {
+    "env:start": "docker compose -f tests/e2e/env/docker-compose.yml up -d",
+    "env:stop": "docker compose -f tests/e2e/env/docker-compose.yml down -v",
+    "test:e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
