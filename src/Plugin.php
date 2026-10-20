@@ -40,6 +40,13 @@ final class Plugin {
 	private Restorer $restorer;
 
 	/**
+	 * Purging and emptying.
+	 *
+	 * @var Purger
+	 */
+	private Purger $purger;
+
+	/**
 	 * Starts the plugin. Runs on `plugins_loaded`.
 	 */
 	public static function boot(): void {
@@ -64,6 +71,7 @@ final class Plugin {
 	private function __construct() {
 		$this->trash    = new Trash( new Settings() );
 		$this->restorer = new Restorer( $this->trash );
+		$this->purger   = new Purger( $this->trash );
 	}
 
 	/**
@@ -90,9 +98,10 @@ final class Plugin {
 	private function register(): void {
 		$services = array(
 			$this->trash,
+			$this->restorer,
 			new Snapshotter( $this->trash ),
-			new Purger( $this->trash ),
-			new TrashPage( $this->trash, $this->restorer ),
+			$this->purger,
+			new TrashPage( $this->trash, $this->restorer, $this->purger ),
 			new TermScreen( $this->trash, $this->restorer ),
 		);
 
@@ -101,7 +110,7 @@ final class Plugin {
 		}
 
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
-			\WP_CLI::add_command( 'term-trash', new Command( $this->trash, $this->restorer ) );
+			\WP_CLI::add_command( 'term-trash', new Command( $this->trash, $this->restorer, $this->purger ) );
 		}
 	}
 }

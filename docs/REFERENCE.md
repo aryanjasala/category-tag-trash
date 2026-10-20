@@ -6,7 +6,11 @@
 | --- | --- | --- |
 | `term_trash_supports_taxonomy` | filter | `( bool $keep, string $taxonomy )`. Return `false` to delete a taxonomy's terms for good, as WordPress normally does. Menus (`nav_menu`) are never kept |
 | `term_trash_retention_days` | filter | `( int $days )`. Days a trashed term is kept. Wins over the setting on the screen |
-| `term_trash_restored` | action | `( int $term_id, string $taxonomy, Snapshot $snapshot, int[] $object_ids )`. Fires after a restore |
+| `term_trash_restored` | action | `( int $term_id, string $taxonomy, Snapshot $snapshot, int[] $object_ids )`. Fires once the term is back. `$object_ids` holds the objects re-attached in that request, at most 5,000 |
+| `term_trash_objects_restored` | action | `( int $term_id, string $taxonomy, int[] $object_ids )`. Fires for every batch of objects re-attached, in the request and in the background |
+| `term_trash_restore_complete` | action | `( int $term_id, string $taxonomy, Snapshot $snapshot )`. Fires once every object is back |
+| `term_trash_restore_batch_size` | filter | `( int $size )`. Objects re-attached per request or cron run. Default 5000 |
+| `term_trash_capability` | filter | `( string $capability )`. Capability for Tools > Term Trash. Default `manage_categories`. Each restore and delete still checks the term's own taxonomy |
 
 ```php
 // Never keep deleted tags.
@@ -21,18 +25,19 @@ add_filter( 'term_trash_supports_taxonomy', function ( $keep, $taxonomy ) {
 wp term-trash list [--taxonomy=<taxonomy>] [--format=table|csv|json|count|ids]
 wp term-trash restore <id>...
 wp term-trash delete <id>...
-wp term-trash delete --all
+wp term-trash delete --all [--yes]
 ```
 
-`<id>` is the trash item ID from `wp term-trash list`, not the term ID.
+`<id>` is the trash item ID from `wp term-trash list`, not the term ID. `restore` re-attaches every object in the same run, even for a term on a million posts, and also finishes a restore that is running in the background.
 
 ## PHP API
 
 ```php
 $plugin = AryanX\TermTrash\Plugin::instance();
 
-$plugin->trash()->find( array( 'taxonomy' => 'category' ) );   // [ 'ids' => [...], 'total' => n ]
-$plugin->restorer()->restore( $item_id );                       // [ 'term_id' => n, 'notes' => [...] ] or WP_Error
+$plugin->trash()->find( array( 'taxonomy' => 'category', 'per_page' => 100 ) ); // [ 'ids' => [...], 'total' => n ], at most 500 per page
+$plugin->restorer()->restore( $item_id );        // [ 'term_id' => n, 'notes' => [...], 'background' => bool ] or WP_Error
+$plugin->restorer()->restore( $item_id, true );  // the same, with every object re-attached before it returns
 ```
 
 ## How a restore works
@@ -42,10 +47,29 @@ The term is captured on `pre_delete_term`, before WordPress touches posts or chi
 Restoring:
 
 - inserts the term row with its original `term_id` and `term_taxonomy_id` when they are still free, and otherwise gives it new ones and says so
-- re-adds the meta and reattaches objects with their `term_order`, skipping objects deleted in the meantime
-- moves children back only if nobody moved them since
-- recreates the menu items in their old position
+- re-adds the meta, moves children back only if nobody moved them since, and recreates the menu items in their old position
+- re-attaches objects with their `term_order` in batches, skipping objects deleted in the meantime, and fires `added_term_relationship` and `set_object_terms` for each one so search indexes such as ElasticPress and VIP Enterprise Search pick them up
+- takes the default term (Uncategorized) back from objects that only got it because of the delete, if nobody changed their terms since
+
+## Large sites
+
+A term on a million posts is fine:
+
+- **Delete:** relationships are read 1,000 at a time and kept as packed `id:order` strings, one meta row per 1,000. The snapshot itself stays a few KB. The work grows with the number of posts, the same way WordPress's own delete does.
+- **Restore:** the first 5,000 objects come back in the request. The rest are re-attached through WP-Cron, 5,000 per run, with a lock so two runs never overlap. The trash screen says so, and the item leaves the list while it runs. `wp term-trash restore <id>` finishes it in one go.
+- **Empty trash:** deletes 200 items in the request and the rest through WP-Cron.
 
 ## Data
 
-Each trashed term is a `term_trash_item` post (hidden, not exported) with the snapshot in post meta. The setting is the `term_trash_settings` option. Uninstalling removes both and the daily `term_trash_purge` cron event.
+Each trashed term is a `term_trash_item` post (hidden, not exported, kept when its author is deleted). Its post meta holds:
+
+| Meta key | What |
+| --- | --- |
+| `_term_trash_snapshot` | the term row, meta, children, menu links, object count and a sample of object IDs |
+| `_term_trash_objects` | one row per 1,000 objects, packed as `id:order,id:order` |
+| `_term_trash_fallback` | one row per 1,000 objects that only had this term, packed as `id,id` |
+| `_term_trash_restore_state` | where a background restore is up to |
+
+Items in the trash have the status `publish`, items being restored in the background `pending`. The setting is the `term_trash_settings` option. The cron events are `term_trash_purge` (daily), `term_trash_empty` and `term_trash_restore_batch`.
+
+Uninstalling removes all of it on every site of a multisite network, 100 sites at a time.

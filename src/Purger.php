@@ -16,6 +16,11 @@ final class Purger implements Service {
 
 	public const HOOK = 'term_trash_purge';
 
+	/**
+	 * Cron hook that keeps emptying the trash after "Empty trash".
+	 */
+	public const EMPTY_HOOK = 'term_trash_empty';
+
 	private const BATCH       = 100;
 	private const MAX_BATCHES = 20;
 
@@ -40,6 +45,7 @@ final class Purger implements Service {
 	 */
 	public function register(): void {
 		add_action( self::HOOK, array( $this, 'run' ) );
+		add_action( self::EMPTY_HOOK, array( $this, 'continue_emptying' ) );
 		add_action( 'admin_init', array( self::class, 'schedule' ) );
 	}
 
@@ -57,6 +63,7 @@ final class Purger implements Service {
 	 */
 	public static function unschedule(): void {
 		wp_clear_scheduled_hook( self::HOOK );
+		wp_clear_scheduled_hook( self::EMPTY_HOOK );
 	}
 
 	/**
@@ -79,7 +86,8 @@ final class Purger implements Service {
 			$expired = get_posts(
 				array(
 					'post_type'   => Trash::POST_TYPE,
-					'post_status' => 'any',
+					// Items being restored in the background are not purged.
+					'post_status' => Trash::STATUS_TRASHED,
 					'numberposts' => self::BATCH,
 					'fields'      => 'ids',
 					'date_query'  => array(
@@ -101,5 +109,57 @@ final class Purger implements Service {
 		}
 
 		return $deleted;
+	}
+
+	/**
+	 * Deletes everything in the trash, a batch at a time.
+	 *
+	 * Deletes up to $limit items now. If more are left, the rest are deleted
+	 * through WP-Cron, so emptying a big trash never times out a request.
+	 *
+	 * @param int           $limit    Items to delete in this request.
+	 * @param callable|null $can_user Optional check run on each snapshot before it is deleted.
+	 * @return array{deleted: int, remaining: int}
+	 */
+	public function empty_trash( int $limit = 200, ?callable $can_user = null ): array {
+		$deleted = 0;
+
+		while ( $deleted < $limit ) {
+			$ids = $this->trash->find( array( 'per_page' => min( self::BATCH, $limit - $deleted ) ) )['ids'];
+			if ( ! $ids ) {
+				break;
+			}
+
+			$progress = 0;
+			foreach ( $ids as $item_id ) {
+				$snapshot = $this->trash->get( $item_id );
+				if ( $can_user && ( ! $snapshot || ! $can_user( $snapshot ) ) ) {
+					continue;
+				}
+				$progress += (int) $this->trash->delete( $item_id );
+			}
+
+			$deleted += $progress;
+			if ( ! $progress ) {
+				break;
+			}
+		}
+
+		$remaining = $this->trash->find( array( 'per_page' => 1 ) )['total'];
+		if ( $remaining && ! $can_user && ! wp_next_scheduled( self::EMPTY_HOOK ) ) {
+			wp_schedule_single_event( time(), self::EMPTY_HOOK );
+		}
+
+		return array(
+			'deleted'   => $deleted,
+			'remaining' => $remaining,
+		);
+	}
+
+	/**
+	 * Cron callback: keeps emptying the trash until it is empty.
+	 */
+	public function continue_emptying(): void {
+		$this->empty_trash( 1000 );
 	}
 }

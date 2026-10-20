@@ -14,10 +14,28 @@ defined( 'ABSPATH' ) || exit;
  *
  * Reuses the original term ID when it is still free, so links that store the
  * ID (navigation blocks, shortcodes, widgets) work again.
+ *
+ * The term itself, its meta, children and menu links come back at once. Its
+ * objects come back in batches: the first batch during the request, the rest
+ * through WP-Cron, so a term on a million posts never times out a request.
+ * WP-CLI restores everything at once.
  */
-final class Restorer {
+final class Restorer implements Service {
 
-	private const BATCH = 500;
+	/**
+	 * Cron hook that re-attaches the next batch of objects.
+	 */
+	public const HOOK = 'term_trash_restore_batch';
+
+	/**
+	 * Seconds after which a background restore lock is treated as stale.
+	 */
+	private const LOCK_TTL = 600;
+
+	/**
+	 * Object IDs passed to term_trash_restored at most.
+	 */
+	private const REPORTED_IDS = 5000;
 
 	/**
 	 * Trashed terms.
@@ -33,6 +51,13 @@ final class Restorer {
 	 */
 	public function __construct( Trash $trash ) {
 		$this->trash = $trash;
+	}
+
+	/**
+	 * Hooks the background batches.
+	 */
+	public function register(): void {
+		add_action( self::HOOK, array( $this, 'continue_restore' ) );
 	}
 
 	/**
@@ -75,15 +100,24 @@ final class Restorer {
 	/**
 	 * Puts a trashed term back the way it was.
 	 *
-	 * @param int $item_id Trash item ID.
-	 * @return array{term_id: int, notes: string[]}|\WP_Error
+	 * @param int  $item_id    Trash item ID.
+	 * @param bool $finish_now Re-attach every object in this request instead of in the background. WP-CLI uses this.
+	 * @return array{term_id: int, notes: string[], background: bool}|\WP_Error
 	 */
-	public function restore( int $item_id ) {
+	public function restore( int $item_id, bool $finish_now = false ) {
 		global $wpdb;
 
 		$snapshot = $this->trash->get( $item_id );
 		if ( ! $snapshot ) {
 			return new \WP_Error( 'term_trash_missing', __( 'That term is no longer in Term Trash.', 'term-trash' ) );
+		}
+
+		if ( $this->trash->is_restoring( $item_id ) ) {
+			if ( $finish_now ) {
+				return $this->finish_background( $item_id, $snapshot );
+			}
+			/* translators: %s: term name. */
+			return new \WP_Error( 'term_trash_busy', sprintf( __( '"%s" is already being restored.', 'term-trash' ), $snapshot->name ) );
 		}
 
 		$taxonomy = $snapshot->taxonomy;
@@ -167,14 +201,21 @@ final class Restorer {
 
 		clean_term_cache( $term_id, $taxonomy );
 
-		$object_ids = $this->restore_relationships( $snapshot, $tt_id );
-		$this->remove_fallback_term( $snapshot, $term_id );
 		$this->restore_children( $snapshot, $term_id );
-
 		if ( $this->restore_menu_links( $snapshot, $term_id ) < count( $snapshot->menu_items ) ) {
 			/* translators: %s: term name. */
 			$notes[] = sprintf( __( 'Some menu links to "%s" were not restored because their menu no longer exists.', 'term-trash' ), $snapshot->name );
 		}
+
+		$state = array(
+			'term_id' => $term_id,
+			'tt_id'   => $tt_id,
+			'phase'   => 'objects',
+			'offset'  => 0,
+		);
+
+		$object_ids = array();
+		$done       = $this->run_batches( $item_id, $snapshot, $state, $finish_now ? PHP_INT_MAX : $this->batch_size(), $object_ids );
 
 		/** This action is documented in wp-includes/taxonomy.php */
 		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Core hook, so other plugins see the restored term.
@@ -183,104 +224,372 @@ final class Restorer {
 		/**
 		 * Fires after a term is restored from Term Trash.
 		 *
+		 * For a term with more objects than one batch, the rest are re-attached in
+		 * the background afterwards: term_trash_objects_restored fires for every
+		 * batch and term_trash_restore_complete once they are all back.
+		 *
 		 * @param int      $term_id    Restored term ID.
 		 * @param string   $taxonomy   Taxonomy name.
 		 * @param Snapshot $snapshot   What was saved when the term was deleted.
-		 * @param int[]    $object_ids Objects the term was attached to again.
+		 * @param int[]    $object_ids Objects re-attached in this request, at most 5,000.
 		 */
 		do_action( 'term_trash_restored', $term_id, $taxonomy, $snapshot, $object_ids );
 
-		$this->trash->delete( $item_id );
+		if ( $done ) {
+			$this->finish( $item_id, $snapshot, $state );
+		} else {
+			$this->defer( $item_id, $state );
+			$notes[] = sprintf(
+				/* translators: 1: term name, 2: number of posts or other items. */
+				__( '"%1$s" is back. Its %2$s items are being re-attached in the background.', 'term-trash' ),
+				$snapshot->name,
+				number_format_i18n( $snapshot->total_objects() )
+			);
+		}
 
 		return array(
-			'term_id' => $term_id,
-			'notes'   => $notes,
+			'term_id'    => $term_id,
+			'notes'      => $notes,
+			'background' => ! $done,
 		);
 	}
 
 	/**
-	 * Re-attaches the term to its objects, keeping term order.
+	 * Cron callback: re-attaches the next batch of a background restore.
+	 *
+	 * @param int $item_id Trash item ID.
+	 */
+	public function continue_restore( $item_id ): void {
+		$item_id  = (int) $item_id;
+		$snapshot = $this->trash->get( $item_id );
+		$state    = get_post_meta( $item_id, Trash::STATE_KEY, true );
+
+		if ( ! $snapshot || ! is_array( $state ) || ! $this->trash->is_restoring( $item_id ) ) {
+			return;
+		}
+
+		if ( ! $this->lock( $item_id ) ) {
+			wp_schedule_single_event( time() + MINUTE_IN_SECONDS, self::HOOK, array( $item_id ) );
+			return;
+		}
+
+		$object_ids = array();
+		if ( $this->run_batches( $item_id, $snapshot, $state, $this->batch_size(), $object_ids ) ) {
+			$this->finish( $item_id, $snapshot, $state );
+		} else {
+			update_post_meta( $item_id, Trash::STATE_KEY, $state );
+			wp_schedule_single_event( time(), self::HOOK, array( $item_id ) );
+		}
+
+		$this->unlock( $item_id );
+	}
+
+	/**
+	 * Finishes a background restore in this request. Used by WP-CLI.
+	 *
+	 * @param int      $item_id  Trash item ID.
+	 * @param Snapshot $snapshot The item's snapshot.
+	 * @return array{term_id: int, notes: string[], background: bool}|\WP_Error
+	 */
+	private function finish_background( int $item_id, Snapshot $snapshot ) {
+		$state = get_post_meta( $item_id, Trash::STATE_KEY, true );
+		if ( ! is_array( $state ) ) {
+			return new \WP_Error( 'term_trash_state', __( 'The background restore lost its place. Delete the trash item and restore the term by hand.', 'term-trash' ) );
+		}
+
+		if ( ! $this->lock( $item_id ) ) {
+			/* translators: %s: term name. */
+			return new \WP_Error( 'term_trash_busy', sprintf( __( '"%s" is being restored by another process right now.', 'term-trash' ), $snapshot->name ) );
+		}
+
+		wp_clear_scheduled_hook( self::HOOK, array( $item_id ) );
+		$object_ids = array();
+		$this->run_batches( $item_id, $snapshot, $state, PHP_INT_MAX, $object_ids );
+		$this->finish( $item_id, $snapshot, $state );
+		$this->unlock( $item_id );
+
+		return array(
+			'term_id'    => (int) $state['term_id'],
+			'notes'      => array(),
+			'background' => false,
+		);
+	}
+
+	/**
+	 * Objects re-attached per request or cron run.
+	 *
+	 * @return int
+	 */
+	private function batch_size(): int {
+		/**
+		 * Filters how many objects a restore re-attaches per request or cron run.
+		 *
+		 * @param int $size Objects per batch. Default 5000.
+		 */
+		return max( Snapshot::CHUNK, (int) apply_filters( 'term_trash_restore_batch_size', 5000 ) );
+	}
+
+	/**
+	 * Re-attaches objects, then takes back the default term, chunk by chunk.
+	 *
+	 * @param int                  $item_id    Trash item ID.
+	 * @param Snapshot             $snapshot   The item's snapshot.
+	 * @param array<string, mixed> $state      Restore state, moved forward in place.
+	 * @param int                  $budget     Objects to handle before stopping.
+	 * @param int[]                $object_ids Re-attached object IDs, filled up to REPORTED_IDS.
+	 * @return bool Whether everything is done.
+	 */
+	private function run_batches( int $item_id, Snapshot $snapshot, array &$state, int $budget, array &$object_ids ): bool {
+		$spent = 0;
+		$done  = false;
+
+		wp_defer_term_counting( true );
+		while ( $spent < $budget ) {
+			$key   = 'objects' === $state['phase'] ? Trash::OBJECTS_KEY : Trash::FALLBACK_KEY;
+			$chunk = $this->trash->chunks( $item_id, $snapshot, $key, (int) $state['offset'], 1 );
+
+			if ( ! $chunk ) {
+				if ( 'objects' === $state['phase'] ) {
+					$state['phase']  = 'fallback';
+					$state['offset'] = 0;
+					continue;
+				}
+				$done = true;
+				break;
+			}
+
+			if ( 'objects' === $state['phase'] ) {
+				$pairs = Snapshot::unpack_pairs( $chunk[0] );
+				$ids   = $this->attach( $snapshot, (int) $state['term_id'], (int) $state['tt_id'], $pairs );
+				if ( count( $object_ids ) < self::REPORTED_IDS ) {
+					$object_ids = array_merge( $object_ids, array_slice( $ids, 0, self::REPORTED_IDS - count( $object_ids ) ) );
+				}
+				$spent += count( $pairs );
+			} else {
+				$ids = Snapshot::unpack_ids( $chunk[0] );
+				$this->drop_fallback( $snapshot, (int) $state['term_id'], (int) $state['tt_id'], $ids );
+				$spent += count( $ids );
+			}
+
+			++$state['offset'];
+		}
+		wp_defer_term_counting( false );
+
+		return $done;
+	}
+
+	/**
+	 * Re-attaches one chunk of objects, keeping term order.
 	 *
 	 * Objects deleted while the term was in the trash are skipped.
 	 *
-	 * @param Snapshot $snapshot Trashed term.
-	 * @param int      $tt_id    Restored term taxonomy ID.
+	 * @param Snapshot                          $snapshot Trashed term.
+	 * @param int                               $term_id  Restored term ID.
+	 * @param int                               $tt_id    Restored term taxonomy ID.
+	 * @param array<int, array{0: int, 1: int}> $pairs    [ object ID, term order ] pairs.
 	 * @return int[] Object IDs re-attached.
 	 */
-	private function restore_relationships( Snapshot $snapshot, int $tt_id ): array {
+	private function attach( Snapshot $snapshot, int $term_id, int $tt_id, array $pairs ): array {
 		global $wpdb;
 
-		$object_types = (array) get_taxonomy( $snapshot->taxonomy )->object_type;
-		$posts_only   = ! array_diff( $object_types, get_post_types() );
-		$restored     = array();
+		$taxonomy     = $snapshot->taxonomy;
+		$object_types = (array) get_taxonomy( $taxonomy )->object_type;
 
-		foreach ( array_chunk( $snapshot->objects, self::BATCH ) as $chunk ) {
-			if ( $posts_only ) {
-				$ids          = wp_list_pluck( $chunk, 0 );
-				$placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- Placeholders are built from the chunk size.
-				$existing = array_map( 'intval', $wpdb->get_col( $wpdb->prepare( "SELECT ID FROM {$wpdb->posts} WHERE ID IN ( {$placeholders} )", $ids ) ) );
-				$chunk    = array_filter(
-					$chunk,
-					static function ( array $row ) use ( $existing ): bool {
-						return in_array( (int) $row[0], $existing, true );
-					}
-				);
-			}
-
-			if ( ! $chunk ) {
-				continue;
-			}
-
-			$values = array();
-			foreach ( $chunk as $row ) {
-				array_push( $values, (int) $row[0], $tt_id, (int) $row[1] );
-				$restored[] = (int) $row[0];
-			}
-
-			$placeholders = implode( ',', array_fill( 0, count( $chunk ), '(%d, %d, %d)' ) );
+		if ( $pairs && ! array_diff( $object_types, get_post_types() ) ) {
+			$ids          = wp_list_pluck( $pairs, 0 );
+			$placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- Placeholders are built from the chunk size.
-			$wpdb->query( $wpdb->prepare( "INSERT IGNORE INTO {$wpdb->term_relationships} ( object_id, term_taxonomy_id, term_order ) VALUES {$placeholders}", $values ) );
+			$existing = array_flip( array_map( 'intval', $wpdb->get_col( $wpdb->prepare( "SELECT ID FROM {$wpdb->posts} WHERE ID IN ( {$placeholders} )", $ids ) ) ) );
+			$pairs    = array_values(
+				array_filter(
+					$pairs,
+					static function ( array $pair ) use ( $existing ): bool {
+						return isset( $existing[ (int) $pair[0] ] );
+					}
+				)
+			);
 		}
 
-		if ( $restored ) {
-			clean_object_term_cache( $restored, $object_types );
+		if ( ! $pairs ) {
+			return array();
 		}
-		wp_update_term_count_now( array( $tt_id ), $snapshot->taxonomy );
 
-		return $restored;
+		$ids = array_map( 'intval', wp_list_pluck( $pairs, 0 ) );
+		$old = $this->terms_in_taxonomy( $ids, $taxonomy );
+
+		$values = array();
+		foreach ( $pairs as $pair ) {
+			array_push( $values, (int) $pair[0], $tt_id, (int) $pair[1] );
+		}
+		$placeholders = implode( ',', array_fill( 0, count( $pairs ), '(%d, %d, %d)' ) );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- Placeholders are built from the chunk size.
+		$wpdb->query( $wpdb->prepare( "INSERT IGNORE INTO {$wpdb->term_relationships} ( object_id, term_taxonomy_id, term_order ) VALUES {$placeholders}", $values ) );
+
+		clean_object_term_cache( $ids, $object_types );
+
+		// Fire what wp_set_object_terms() fires, so search indexes (ElasticPress,
+		// VIP Enterprise Search) and caches pick up the restored terms.
+		// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Core hooks.
+		foreach ( $ids as $object_id ) {
+			/** This action is documented in wp-includes/taxonomy.php */
+			do_action( 'added_term_relationship', $object_id, $tt_id, $taxonomy );
+			/** This action is documented in wp-includes/taxonomy.php */
+			do_action( 'set_object_terms', $object_id, array( $term_id ), array( $tt_id ), $taxonomy, true, $old[ $object_id ] ?? array() );
+		}
+		// phpcs:enable
+
+		/**
+		 * Fires after a batch of objects is re-attached to a restored term.
+		 *
+		 * @param int    $term_id    Restored term ID.
+		 * @param string $taxonomy   Taxonomy name.
+		 * @param int[]  $object_ids Objects in this batch.
+		 */
+		do_action( 'term_trash_objects_restored', $term_id, $taxonomy, $ids );
+
+		return $ids;
+	}
+
+	/**
+	 * Term taxonomy IDs each object has in a taxonomy.
+	 *
+	 * @param int[]  $ids      Object IDs.
+	 * @param string $taxonomy Taxonomy name.
+	 * @return array<int, int[]>
+	 */
+	private function terms_in_taxonomy( array $ids, string $taxonomy ): array {
+		global $wpdb;
+
+		$placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- Placeholders are built from the chunk size.
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT tr.object_id, tr.term_taxonomy_id FROM {$wpdb->term_relationships} tr
+				INNER JOIN {$wpdb->term_taxonomy} tt ON tt.term_taxonomy_id = tr.term_taxonomy_id
+				WHERE tt.taxonomy = %s AND tr.object_id IN ( {$placeholders} )",
+				array_merge( array( $taxonomy ), $ids )
+			),
+			ARRAY_N
+		);
+		// phpcs:enable
+
+		$terms = array();
+		foreach ( $rows as $row ) {
+			$terms[ (int) $row[0] ][] = (int) $row[1];
+		}
+
+		return $terms;
 	}
 
 	/**
 	 * Takes back the default term WordPress gave to objects that only had this term.
 	 *
-	 * Leaves objects alone if someone has changed their terms since.
+	 * Leaves objects alone if someone has changed their terms since: only
+	 * objects whose terms are exactly the default and the restored term lose
+	 * the default.
 	 *
 	 * @param Snapshot $snapshot Trashed term.
 	 * @param int      $term_id  Restored term ID.
+	 * @param int      $tt_id    Restored term taxonomy ID.
+	 * @param int[]    $ids      Objects that only had this term.
 	 */
-	private function remove_fallback_term( Snapshot $snapshot, int $term_id ): void {
+	private function drop_fallback( Snapshot $snapshot, int $term_id, int $tt_id, array $ids ): void {
+		global $wpdb;
+
 		$default = $snapshot->default_term;
-		if ( ! $default || ! term_exists( $default, $snapshot->taxonomy ) ) {
+		$term    = $default && $default !== $term_id ? get_term( $default, $snapshot->taxonomy ) : null;
+		if ( ! $term instanceof \WP_Term || ! $ids ) {
 			return;
 		}
 
-		$expected = array( $default, $term_id );
-		sort( $expected );
+		$placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- Placeholders are built from the chunk size.
+		$matched = $wpdb->get_col(
+			$wpdb->prepare(
+				"SELECT tr.object_id FROM {$wpdb->term_relationships} tr
+				INNER JOIN {$wpdb->term_taxonomy} tt ON tt.term_taxonomy_id = tr.term_taxonomy_id
+				WHERE tt.taxonomy = %s AND tr.object_id IN ( {$placeholders} )
+				GROUP BY tr.object_id
+				HAVING COUNT(*) = 2 AND SUM( tr.term_taxonomy_id IN ( %d, %d ) ) = 2",
+				array_merge( array( $snapshot->taxonomy ), $ids, array( (int) $term->term_taxonomy_id, $tt_id ) )
+			)
+		);
+		// phpcs:enable
 
-		foreach ( $snapshot->fallback_objects as $object_id ) {
-			$current = wp_get_object_terms( $object_id, $snapshot->taxonomy, array( 'fields' => 'ids' ) );
-			if ( is_wp_error( $current ) ) {
-				continue;
-			}
-
-			$current = array_map( 'intval', $current );
-			sort( $current );
-
-			if ( $current === $expected ) {
-				wp_remove_object_terms( $object_id, $default, $snapshot->taxonomy );
-			}
+		foreach ( $matched as $object_id ) {
+			wp_remove_object_terms( (int) $object_id, $default, $snapshot->taxonomy );
 		}
+	}
+
+	/**
+	 * Final step: recounts the term, announces it and empties the trash item.
+	 *
+	 * @param int                  $item_id  Trash item ID.
+	 * @param Snapshot             $snapshot The item's snapshot.
+	 * @param array<string, mixed> $state    Restore state.
+	 */
+	private function finish( int $item_id, Snapshot $snapshot, array $state ): void {
+		wp_update_term_count_now( array( (int) $state['tt_id'] ), $snapshot->taxonomy );
+
+		/**
+		 * Fires once every object of a restored term is re-attached.
+		 *
+		 * @param int      $term_id  Restored term ID.
+		 * @param string   $taxonomy Taxonomy name.
+		 * @param Snapshot $snapshot What was saved when the term was deleted.
+		 */
+		do_action( 'term_trash_restore_complete', (int) $state['term_id'], $snapshot->taxonomy, $snapshot );
+
+		$this->trash->delete( $item_id );
+	}
+
+	/**
+	 * Hands the rest of a restore to WP-Cron.
+	 *
+	 * @param int                  $item_id Trash item ID.
+	 * @param array<string, mixed> $state   Restore state.
+	 */
+	private function defer( int $item_id, array $state ): void {
+		update_post_meta( $item_id, Trash::STATE_KEY, $state );
+		wp_update_post(
+			array(
+				'ID'          => $item_id,
+				'post_status' => Trash::STATUS_RESTORING,
+			)
+		);
+
+		if ( ! wp_next_scheduled( self::HOOK, array( $item_id ) ) ) {
+			wp_schedule_single_event( time(), self::HOOK, array( $item_id ) );
+		}
+	}
+
+	/**
+	 * Takes the lock for a background restore, so two cron runs never overlap.
+	 *
+	 * @param int $item_id Trash item ID.
+	 * @return bool Whether the lock was taken.
+	 */
+	private function lock( int $item_id ): bool {
+		$name = 'term_trash_lock_' . $item_id;
+		if ( add_option( $name, time(), '', false ) ) {
+			return true;
+		}
+
+		if ( time() - (int) get_option( $name ) > self::LOCK_TTL ) {
+			delete_option( $name );
+			return add_option( $name, time(), '', false );
+		}
+
+		return false;
+	}
+
+	/**
+	 * Releases the lock for a background restore.
+	 *
+	 * @param int $item_id Trash item ID.
+	 */
+	private function unlock( int $item_id ): void {
+		delete_option( 'term_trash_lock_' . $item_id );
 	}
 
 	/**

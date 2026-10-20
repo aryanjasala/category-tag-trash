@@ -266,8 +266,8 @@ final class TrashListTable extends \WP_List_Table {
 	 * @return string[]
 	 */
 	private function summary( Snapshot $snapshot ): array {
-		/* translators: %d: number of posts or other items. */
-		$parts = array( sprintf( _n( '%d item', '%d items', count( $snapshot->objects ), 'term-trash' ), count( $snapshot->objects ) ) );
+		/* translators: %s: number of posts or other items. */
+		$parts = array( sprintf( _n( '%s item', '%s items', $snapshot->total_objects(), 'term-trash' ), number_format_i18n( $snapshot->total_objects() ) ) );
 
 		if ( $snapshot->children ) {
 			/* translators: %d: number of child terms. */
@@ -290,8 +290,10 @@ final class TrashListTable extends \WP_List_Table {
 	private function details( Snapshot $snapshot ): string {
 		$lines = array();
 
-		$posts = array();
-		foreach ( array_slice( $snapshot->object_ids(), 0, 10 ) as $object_id ) {
+		$posts  = array();
+		$sample = $snapshot->sample();
+		_prime_post_caches( $sample, false, false );
+		foreach ( $sample as $object_id ) {
 			$post    = get_post( $object_id );
 			$posts[] = $post
 				? sprintf( '<a href="%s">%s</a>', esc_url( (string) get_edit_post_link( $post ) ), esc_html( get_the_title( $post ) ? get_the_title( $post ) : __( '(no title)', 'term-trash' ) ) )
@@ -299,10 +301,10 @@ final class TrashListTable extends \WP_List_Table {
 				: esc_html( sprintf( __( '#%d (deleted)', 'term-trash' ), $object_id ) );
 		}
 		if ( $posts ) {
-			$more    = count( $snapshot->objects ) - count( $posts );
+			$more    = $snapshot->total_objects() - count( $posts );
 			$lines[] = '<strong>' . esc_html__( 'Items:', 'term-trash' ) . '</strong> ' . implode( ', ', $posts )
-				/* translators: %d: number of further items. */
-				. ( $more > 0 ? ' ' . esc_html( sprintf( __( 'and %d more', 'term-trash' ), $more ) ) : '' );
+				/* translators: %s: number of further items. */
+				. ( $more > 0 ? ' ' . esc_html( sprintf( __( 'and %s more', 'term-trash' ), number_format_i18n( $more ) ) ) : '' );
 		}
 
 		$children = array();

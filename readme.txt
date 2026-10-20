@@ -62,6 +62,10 @@ Only posts that still have exactly the default category plus the restored term l
 
 Use the `term_trash_supports_taxonomy` filter. Menus are never kept, because deleting a menu removes its items first.
 
+= Does it work for a tag on thousands of posts? =
+
+Yes. The posts are saved in small chunks, so the trash stays light. A restore brings back the first 5,000 posts right away and the rest in the background, and `wp term-trash restore <id>` does it all in one go. Search plugins like ElasticPress are told about every post that gets its term back.
+
 == Screenshots ==
 
 1. Undo right after deleting a category.

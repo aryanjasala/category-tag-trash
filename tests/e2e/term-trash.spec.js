@@ -1,4 +1,4 @@
-const { test, expect, wp } = require( './utils' );
+const { test, expect, wp, wpEval } = require( './utils' );
 
 const TRASH = '/wp-admin/tools.php?page=term-trash';
 
@@ -136,8 +136,14 @@ test.describe( 'Term Trash', () => {
 
 		make( [ 'Batch D' ] );
 		await page.goto( TRASH );
+		let confirmed = '';
+		page.once( 'dialog', ( dialog ) => {
+			confirmed = dialog.message();
+			dialog.accept();
+		} );
 		await page.getByRole( 'button', { name: 'Empty trash' } ).click();
 		await expect( page.locator( '.notice-success' ) ).toContainText( '1 term deleted for good.' );
+		expect( confirmed ).toContain( 'cannot be undone' );
 		await expect( page.getByRole( 'button', { name: 'Empty trash' } ) ).toHaveCount( 0 );
 
 		await page.locator( '#tt-retention' ).selectOption( '90' );
@@ -145,6 +151,81 @@ test.describe( 'Term Trash', () => {
 		await expect( page.locator( '.notice-success' ) ).toContainText( 'Settings saved.' );
 		await expect( page.locator( '.tt-intro' ) ).toContainText( 'kept here for 90 days' );
 		wp( 'option', 'delete', 'term_trash_settings' );
+	} );
+
+	test( 'a category on 6,200 posts is kept in chunks and restored in the background', async ( { page } ) => {
+		test.setTimeout( 300_000 );
+		const POSTS = 6200;
+		const cat = Number( wp( 'term', 'create', 'category', 'Big archive', '--porcelain' ) );
+
+		// Insert the posts with SQL: thousands of wp_insert_post() calls would take minutes.
+		const ids = JSON.parse(
+			wpEval( `
+				global $wpdb;
+				$tt  = (int) get_term( ${ cat }, 'category' )->term_taxonomy_id;
+				$now = current_time( 'mysql', true );
+				$ids = array();
+				for ( $batch = 0; $batch < ${ POSTS } / 200; $batch++ ) {
+					$rows = array();
+					for ( $i = 0; $i < 200; $i++ ) {
+						$rows[] = $wpdb->prepare( "( %s, %s, %s, 'publish', 'post', '', '', '', '' )", 'Archive post ' . ( $batch * 200 + $i ), $now, $now );
+					}
+					$wpdb->query( "INSERT INTO {$wpdb->posts} ( post_title, post_date, post_date_gmt, post_status, post_type, post_content, post_excerpt, to_ping, pinged ) VALUES " . implode( ',', $rows ) );
+					$first = (int) $wpdb->insert_id;
+					$pairs = array();
+					for ( $i = 0; $i < 200; $i++ ) {
+						$ids[]   = $first + $i;
+						$pairs[] = $wpdb->prepare( '( %d, %d, %d )', $first + $i, $tt, $i % 7 );
+					}
+					$wpdb->query( "INSERT INTO {$wpdb->term_relationships} ( object_id, term_taxonomy_id, term_order ) VALUES " . implode( ',', $pairs ) );
+				}
+				wp_update_term_count_now( array( $tt ), 'category' );
+				echo wp_json_encode( array( $ids[0], end( $ids ) ) );
+			` )
+		);
+		const inRange = `object_id BETWEEN ${ ids[ 0 ] } AND ${ ids[ 1 ] }`;
+		const countRows = ( where ) => Number( wpEval( `global $wpdb; echo (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->term_relationships} tr INNER JOIN {$wpdb->term_taxonomy} tt USING ( term_taxonomy_id ) WHERE ${ where }" );` ) );
+
+		// Core moves every post to Uncategorized, since this was their only category.
+		wp( 'term', 'delete', 'category', String( cat ) );
+		expect( countRows( `tt.term_id = 1 AND tr.${ inRange }` ) ).toBe( POSTS );
+
+		const itemId = Number( wp( 'term-trash', 'list', '--format=ids' ).split( ' ' )[ 0 ] );
+		const stored = JSON.parse(
+			wpEval( `
+				echo wp_json_encode( array(
+					'objects'  => count( get_post_meta( ${ itemId }, '_term_trash_objects' ) ),
+					'fallback' => count( get_post_meta( ${ itemId }, '_term_trash_fallback' ) ),
+					'snapshot' => strlen( maybe_serialize( get_post_meta( ${ itemId }, '_term_trash_snapshot', true ) ) ),
+				) );
+			` )
+		);
+		expect( stored.objects ).toBe( 7 );
+		expect( stored.fallback ).toBe( 7 );
+		expect( stored.snapshot ).toBeLessThan( 4000 );
+
+		await page.goto( TRASH );
+		const row = page.locator( '#the-list tr', { hasText: 'Big archive' } );
+		await expect( row.locator( '.column-attached' ) ).toHaveText( '6,200 items' );
+		await row.hover();
+		await row.locator( '.tt-restore' ).click();
+		await expect( page.locator( '.tt-notes, .notice' ).filter( { hasText: 'being re-attached in the background' } ) ).toBeVisible();
+		await expect( page.locator( '#the-list tr', { hasText: 'Big archive' } ) ).toHaveCount( 0 );
+
+		// The first 5,000 came back in the request, the rest wait for cron.
+		expect( Number( wp( 'term', 'get', 'category', String( cat ), '--field=term_id' ) ) ).toBe( cat );
+		expect( countRows( `tt.term_id = ${ cat }` ) ).toBe( 5000 );
+		expect( wpEval( `echo get_post_status( ${ itemId } );` ) ).toBe( 'pending' );
+
+		// One cron run, then WP-CLI finishes the rest.
+		wp( 'cron', 'event', 'run', 'term_trash_restore_batch' );
+		expect( countRows( `tt.term_id = ${ cat }` ) ).toBe( POSTS );
+		wp( 'term-trash', 'restore', String( itemId ) );
+
+		expect( countRows( `tt.term_id = 1 AND tr.${ inRange }` ) ).toBe( 0 );
+		expect( Number( wp( 'term', 'get', 'category', String( cat ), '--field=count' ) ) ).toBe( POSTS );
+		expect( wpEval( `echo get_post_status( ${ itemId } ) ? 'still there' : 'gone';` ) ).toBe( 'gone' );
+		expect( wpEval( `global $wpdb; echo (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->term_relationships} WHERE object_id = ${ ids[ 0 ] } + 3 AND term_order = 3" );` ) ).toBe( '1' );
 	} );
 
 	test( 'restores under a new slug when the old one was reused, from WP-CLI', () => {

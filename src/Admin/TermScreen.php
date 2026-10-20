@@ -79,16 +79,14 @@ final class TermScreen implements Service {
 	 * @param string $taxonomy Taxonomy of the screen.
 	 */
 	public function table_note( string $taxonomy ): void {
-		$object = get_taxonomy( $taxonomy );
-		$count  = $this->trash->count_by_taxonomy()[ $taxonomy ] ?? 0;
+		$count = $this->trash->count_by_taxonomy()[ $taxonomy ] ?? 0;
 
 		printf(
 			'<p class="term-trash-note"><span class="dashicons dashicons-trash" aria-hidden="true"></span> %s <a href="%s">%s</a></p>',
 			esc_html(
 				sprintf(
-					/* translators: 1: taxonomy name, plural, 2: number of days. */
-					__( 'Deleted %1$s stay in Term Trash for %2$d days.', 'term-trash' ),
-					strtolower( $object->labels->name ),
+					/* translators: %d: number of days. */
+					_n( 'Anything deleted here stays in Term Trash for %d day.', 'Anything deleted here stays in Term Trash for %d days.', $this->trash->settings()->retention_days(), 'term-trash' ),
 					$this->trash->settings()->retention_days()
 				)
 			),
