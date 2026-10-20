@@ -29,6 +29,8 @@ Keeping the same ID matters: navigation blocks, widgets and shortcodes that poin
 
 Works with categories, tags, WooCommerce product categories and attributes, and any custom taxonomy that has an admin screen.
 
+Free and open source under the GPL. No pro version, no upsells, no ads in wp-admin, no tracking. And it stays that way.
+
 = Where to find it =
 
 * **Tools > Term Trash** lists deleted terms with what they were attached to, who deleted them and when. Filter by taxonomy, search, restore or delete in bulk, see exactly which posts, child terms and menus a restore brings back, and empty the trash.

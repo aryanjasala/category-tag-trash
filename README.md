@@ -26,6 +26,9 @@
 
 Posts and pages go to the trash when you delete them. Categories and tags don't: one click and the term is gone, its posts move to Uncategorized, its child categories move up a level and its menu links disappear. Term Trash keeps every deleted term for 30 days and puts all of that back on restore, under the same ID.
 
+> [!NOTE]
+> Free and open source under the GPL. No pro version, no upsells, no ads in wp-admin, no tracking. And it stays that way.
+
 ## Features
 
 - **Undo** right after a delete, on every term screen, for single and bulk deletes
@@ -102,6 +105,17 @@ tests/
 .wordpress-org/          screenshots
 docs/                    reference, development, contributing, releasing
 ```
+
+## More free plugins
+
+Small plugins that each fill one gap in WordPress, all free with no pro version:
+
+| | Plugin | What it does |
+| --- | --- | --- |
+| <img src="https://raw.githubusercontent.com/aryanjasala/template-usage-column/main/.wordpress-org/icon-128x128.png" alt="" width="32"> | [Template Usage Column](https://github.com/aryanjasala/template-usage-column) | See which template every page uses, and fix the pages on a missing template |
+| <img src="https://raw.githubusercontent.com/aryanjasala/staging-guard/main/.wordpress-org/icon-128x128.png" alt="" width="32"> | [Staging Guard](https://github.com/aryanjasala/staging-guard) | Stops staging copies from emailing real people or getting indexed |
+| <img src="https://raw.githubusercontent.com/aryanjasala/deploy-freeze/main/.wordpress-org/icon-128x128.png" alt="" width="32"> | [Deploy Freeze](https://github.com/aryanjasala/deploy-freeze) | Read-only mode for WordPress during migrations and deploys |
+| <img src="https://raw.githubusercontent.com/aryanjasala/restore-one-block/main/.wordpress-org/icon-128x128.png" alt="" width="32"> | [Restore One Block](https://github.com/aryanjasala/restore-one-block) | Restore a single block from an old revision, not the whole post |
 
 ## License
 
