@@ -5,7 +5,13 @@
 | Hook | Type | Use |
 | --- | --- | --- |
 | `term_trash_supports_taxonomy` | filter | `( bool $keep, string $taxonomy )`. Return `false` to delete a taxonomy's terms for good, as WordPress normally does. Menus (`nav_menu`) are never kept |
+| `term_trash_keep_term` | filter | `( bool $keep, WP_Term $term )`. Whether one deleted term goes to the trash, for example to let empty tags go for good |
 | `term_trash_retention_days` | filter | `( int $days )`. Days a trashed term is kept. Wins over the setting on the screen |
+| `term_trash_retention_choices` | filter | `( int[] $days )`. Periods offered on the screen. Default 7, 30, 90 and 365 |
+| `term_trash_undo_seconds` | filter | `( int $seconds )`. How long the Undo notice after a bulk delete stays. Default 300 |
+| `term_trash_trashed` | action | `( int $item_id, Snapshot $snapshot )`. A deleted term landed in the trash |
+| `term_trash_deleted` | action | `( int $item_id, Snapshot $snapshot )`. A trashed term is about to be deleted for good: Empty trash, Delete permanently or the daily clean-up. Not on restore |
+| `term_trash_purged` | action | `( int $deleted )`. The daily clean-up deleted this many expired terms |
 | `term_trash_restored` | action | `( int $term_id, string $taxonomy, Snapshot $snapshot, int[] $object_ids )`. Fires once the term is back. `$object_ids` holds the objects re-attached in that request, at most 5,000 |
 | `term_trash_objects_restored` | action | `( int $term_id, string $taxonomy, int[] $object_ids )`. Fires for every batch of objects re-attached, in the request and in the background |
 | `term_trash_restore_complete` | action | `( int $term_id, string $taxonomy, Snapshot $snapshot )`. Fires once every object is back |
@@ -17,6 +23,12 @@
 add_filter( 'term_trash_supports_taxonomy', function ( $keep, $taxonomy ) {
 	return 'post_tag' === $taxonomy ? false : $keep;
 }, 10, 2 );
+
+// Let empty categories go for good, keep the rest.
+add_filter( 'term_trash_keep_term', fn( $keep, $term ) => $keep && $term->count > 0, 10, 2 );
+
+// Offer a 14-day option.
+add_filter( 'term_trash_retention_choices', fn( $days ) => array_merge( $days, array( 14 ) ) );
 ```
 
 ## WP-CLI

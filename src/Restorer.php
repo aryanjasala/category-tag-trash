@@ -540,7 +540,7 @@ final class Restorer implements Service {
 		 */
 		do_action( 'term_trash_restore_complete', (int) $state['term_id'], $snapshot->taxonomy, $snapshot );
 
-		$this->trash->delete( $item_id );
+		$this->trash->remove( $item_id );
 	}
 
 	/**
