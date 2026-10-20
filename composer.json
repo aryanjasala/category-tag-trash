@@ -1,5 +1,5 @@
 {
-  "name": "aryanx/term-trash",
+  "name": "aryanx/category-tag-trash",
   "description": "A trash for WordPress categories, tags and custom terms, with undo and full restore.",
   "type": "wordpress-plugin",
   "license": "GPL-2.0-or-later",
@@ -25,12 +25,12 @@
   },
   "autoload": {
     "psr-4": {
-      "AryanX\\TermTrash\\": "src/"
+      "AryanX\\CategoryTagTrash\\": "src/"
     }
   },
   "autoload-dev": {
     "psr-4": {
-      "AryanX\\TermTrash\\Tests\\": "tests/"
+      "AryanX\\CategoryTagTrash\\Tests\\": "tests/"
     }
   },
   "config": {

@@ -1,5 +1,5 @@
 name: Feature request
-description: An idea that would make Term Trash more useful.
+description: An idea that would make Category & Tag Trash more useful.
 labels: [enhancement]
 body:
   - type: textarea

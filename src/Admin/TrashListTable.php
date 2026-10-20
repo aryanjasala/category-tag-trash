@@ -1,14 +1,14 @@
 <?php
 /**
- * List table for Tools > Term Trash.
+ * List table for Tools > Category & Tag Trash.
  *
- * @package AryanX\TermTrash
+ * @package AryanX\CategoryTagTrash
  */
 
-namespace AryanX\TermTrash\Admin;
+namespace AryanX\CategoryTagTrash\Admin;
 
-use AryanX\TermTrash\Snapshot;
-use AryanX\TermTrash\Trash;
+use AryanX\CategoryTagTrash\Snapshot;
+use AryanX\CategoryTagTrash\Trash;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -45,8 +45,8 @@ final class TrashListTable extends \WP_List_Table {
 
 		parent::__construct(
 			array(
-				'singular' => 'term_trash_item',
-				'plural'   => 'term_trash_items',
+				'singular' => 'category_tag_trash_item',
+				'plural'   => 'category_tag_trash_items',
 				'ajax'     => false,
 			)
 		);
@@ -108,10 +108,10 @@ final class TrashListTable extends \WP_List_Table {
 	public function get_columns(): array {
 		return array(
 			'cb'       => '<input type="checkbox">',
-			'name'     => __( 'Term', 'term-trash' ),
-			'taxonomy' => __( 'Taxonomy', 'term-trash' ),
-			'attached' => __( 'Attached to', 'term-trash' ),
-			'deleted'  => __( 'Deleted', 'term-trash' ),
+			'name'     => __( 'Term', 'category-tag-trash' ),
+			'taxonomy' => __( 'Taxonomy', 'category-tag-trash' ),
+			'attached' => __( 'Attached to', 'category-tag-trash' ),
+			'deleted'  => __( 'Deleted', 'category-tag-trash' ),
 		);
 	}
 
@@ -129,7 +129,7 @@ final class TrashListTable extends \WP_List_Table {
 				'<a href="%s"%s>%s <span class="count">(%s)</span></a>',
 				esc_url( $base ),
 				'' === $current ? ' class="current" aria-current="page"' : '',
-				esc_html__( 'All', 'term-trash' ),
+				esc_html__( 'All', 'category-tag-trash' ),
 				esc_html( number_format_i18n( array_sum( $counts ) ) )
 			),
 		);
@@ -155,8 +155,8 @@ final class TrashListTable extends \WP_List_Table {
 	 */
 	protected function get_bulk_actions(): array {
 		return array(
-			'restore' => __( 'Restore', 'term-trash' ),
-			'delete'  => __( 'Delete permanently', 'term-trash' ),
+			'restore' => __( 'Restore', 'category-tag-trash' ),
+			'delete'  => __( 'Delete permanently', 'category-tag-trash' ),
 		);
 	}
 
@@ -164,7 +164,7 @@ final class TrashListTable extends \WP_List_Table {
 	 * Message when the trash is empty.
 	 */
 	public function no_items(): void {
-		esc_html_e( 'Term Trash is empty.', 'term-trash' );
+		esc_html_e( 'Category & Tag Trash is empty.', 'category-tag-trash' );
 	}
 
 	/**
@@ -176,10 +176,10 @@ final class TrashListTable extends \WP_List_Table {
 	protected function column_cb( $item ): string {
 		$item_id = (int) $item['id'];
 		return sprintf(
-			'<label class="screen-reader-text" for="tt-item-%1$d">%2$s</label><input type="checkbox" id="tt-item-%1$d" name="items[]" value="%1$d">',
+			'<label class="screen-reader-text" for="ctt-item-%1$d">%2$s</label><input type="checkbox" id="ctt-item-%1$d" name="items[]" value="%1$d">',
 			(int) $item_id,
 			/* translators: %s: term name. */
-			esc_html( sprintf( __( 'Select %s', 'term-trash' ), $this->snapshots[ $item_id ]->name ) )
+			esc_html( sprintf( __( 'Select %s', 'category-tag-trash' ), $this->snapshots[ $item_id ]->name ) )
 		);
 	}
 
@@ -195,12 +195,12 @@ final class TrashListTable extends \WP_List_Table {
 		$actions  = array();
 
 		if ( taxonomy_exists( $snapshot->taxonomy ) ) {
-			$actions['restore'] = sprintf( '<a href="%s" class="tt-restore">%s</a>', esc_url( TrashPage::action_url( 'restore', array( $item_id ) ) ), esc_html__( 'Restore', 'term-trash' ) );
+			$actions['restore'] = sprintf( '<a href="%s" class="ctt-restore">%s</a>', esc_url( TrashPage::action_url( 'restore', array( $item_id ) ) ), esc_html__( 'Restore', 'category-tag-trash' ) );
 		}
-		$actions['delete'] = sprintf( '<a href="%s" class="submitdelete">%s</a>', esc_url( TrashPage::action_url( 'delete', array( $item_id ) ) ), esc_html__( 'Delete permanently', 'term-trash' ) );
+		$actions['delete'] = sprintf( '<a href="%s" class="submitdelete">%s</a>', esc_url( TrashPage::action_url( 'delete', array( $item_id ) ) ), esc_html__( 'Delete permanently', 'category-tag-trash' ) );
 
 		return sprintf(
-			'<strong class="tt-name">%s</strong> <code class="tt-slug">%s</code>%s%s',
+			'<strong class="ctt-name">%s</strong> <code class="ctt-slug">%s</code>%s%s',
 			esc_html( $snapshot->name ),
 			esc_html( $snapshot->slug ),
 			$this->row_actions( $actions ),
@@ -220,7 +220,7 @@ final class TrashListTable extends \WP_List_Table {
 		$object   = get_taxonomy( $snapshot->taxonomy );
 
 		if ( ! $object ) {
-			return sprintf( '%s<br><span class="tt-warning">%s</span>', esc_html( $snapshot->taxonomy ), esc_html__( 'Not registered, so it cannot be restored', 'term-trash' ) );
+			return sprintf( '%s<br><span class="ctt-warning">%s</span>', esc_html( $snapshot->taxonomy ), esc_html__( 'Not registered, so it cannot be restored', 'category-tag-trash' ) );
 		}
 
 		return esc_html( $object->labels->singular_name );
@@ -250,12 +250,12 @@ final class TrashListTable extends \WP_List_Table {
 		$time    = (int) get_post_time( 'U', true, $post );
 
 		return sprintf(
-			'<span title="%s">%s</span><br><span class="tt-muted">%s</span>',
+			'<span title="%s">%s</span><br><span class="ctt-muted">%s</span>',
 			esc_attr( wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $time ) ),
 			/* translators: %s: time ago, e.g. "5 mins". */
-			esc_html( sprintf( __( '%s ago', 'term-trash' ), human_time_diff( $time ) ) ),
+			esc_html( sprintf( __( '%s ago', 'category-tag-trash' ), human_time_diff( $time ) ) ),
 			/* translators: %s: user name. */
-			esc_html( sprintf( __( 'by %s', 'term-trash' ), $deleter ? $deleter->display_name : __( 'WP-CLI or a script', 'term-trash' ) ) )
+			esc_html( sprintf( __( 'by %s', 'category-tag-trash' ), $deleter ? $deleter->display_name : __( 'WP-CLI or a script', 'category-tag-trash' ) ) )
 		);
 	}
 
@@ -267,15 +267,15 @@ final class TrashListTable extends \WP_List_Table {
 	 */
 	private function summary( Snapshot $snapshot ): array {
 		/* translators: %s: number of posts or other items. */
-		$parts = array( sprintf( _n( '%s item', '%s items', $snapshot->total_objects(), 'term-trash' ), number_format_i18n( $snapshot->total_objects() ) ) );
+		$parts = array( sprintf( _n( '%s item', '%s items', $snapshot->total_objects(), 'category-tag-trash' ), number_format_i18n( $snapshot->total_objects() ) ) );
 
 		if ( $snapshot->children ) {
 			/* translators: %d: number of child terms. */
-			$parts[] = sprintf( _n( '%d child term', '%d child terms', count( $snapshot->children ), 'term-trash' ), count( $snapshot->children ) );
+			$parts[] = sprintf( _n( '%d child term', '%d child terms', count( $snapshot->children ), 'category-tag-trash' ), count( $snapshot->children ) );
 		}
 		if ( $snapshot->menu_items ) {
 			/* translators: %d: number of menu links. */
-			$parts[] = sprintf( _n( '%d menu link', '%d menu links', count( $snapshot->menu_items ), 'term-trash' ), count( $snapshot->menu_items ) );
+			$parts[] = sprintf( _n( '%d menu link', '%d menu links', count( $snapshot->menu_items ), 'category-tag-trash' ), count( $snapshot->menu_items ) );
 		}
 
 		return $parts;
@@ -296,15 +296,15 @@ final class TrashListTable extends \WP_List_Table {
 		foreach ( $sample as $object_id ) {
 			$post    = get_post( $object_id );
 			$posts[] = $post
-				? sprintf( '<a href="%s">%s</a>', esc_url( (string) get_edit_post_link( $post ) ), esc_html( get_the_title( $post ) ? get_the_title( $post ) : __( '(no title)', 'term-trash' ) ) )
+				? sprintf( '<a href="%s">%s</a>', esc_url( (string) get_edit_post_link( $post ) ), esc_html( get_the_title( $post ) ? get_the_title( $post ) : __( '(no title)', 'category-tag-trash' ) ) )
 				/* translators: %d: object ID. */
-				: esc_html( sprintf( __( '#%d (deleted)', 'term-trash' ), $object_id ) );
+				: esc_html( sprintf( __( '#%d (deleted)', 'category-tag-trash' ), $object_id ) );
 		}
 		if ( $posts ) {
 			$more    = $snapshot->total_objects() - count( $posts );
-			$lines[] = '<strong>' . esc_html__( 'Items:', 'term-trash' ) . '</strong> ' . implode( ', ', $posts )
+			$lines[] = '<strong>' . esc_html__( 'Items:', 'category-tag-trash' ) . '</strong> ' . implode( ', ', $posts )
 				/* translators: %s: number of further items. */
-				. ( $more > 0 ? ' ' . esc_html( sprintf( __( 'and %s more', 'term-trash' ), number_format_i18n( $more ) ) ) : '' );
+				. ( $more > 0 ? ' ' . esc_html( sprintf( __( 'and %s more', 'category-tag-trash' ), number_format_i18n( $more ) ) ) : '' );
 		}
 
 		$children = array();
@@ -315,20 +315,20 @@ final class TrashListTable extends \WP_List_Table {
 			}
 		}
 		if ( $children ) {
-			$lines[] = '<strong>' . esc_html__( 'Child terms:', 'term-trash' ) . '</strong> ' . implode( ', ', $children );
+			$lines[] = '<strong>' . esc_html__( 'Child terms:', 'category-tag-trash' ) . '</strong> ' . implode( ', ', $children );
 		}
 
 		$menus = array();
 		foreach ( $snapshot->menu_items as $link ) {
 			$menu    = wp_get_nav_menu_object( $link['menu_id'] );
-			$menus[] = esc_html( $menu ? $menu->name : __( 'deleted menu', 'term-trash' ) );
+			$menus[] = esc_html( $menu ? $menu->name : __( 'deleted menu', 'category-tag-trash' ) );
 		}
 		if ( $menus ) {
-			$lines[] = '<strong>' . esc_html__( 'Menus:', 'term-trash' ) . '</strong> ' . implode( ', ', array_unique( $menus ) );
+			$lines[] = '<strong>' . esc_html__( 'Menus:', 'category-tag-trash' ) . '</strong> ' . implode( ', ', array_unique( $menus ) );
 		}
 
 		if ( '' !== $snapshot->description ) {
-			$lines[] = '<strong>' . esc_html__( 'Description:', 'term-trash' ) . '</strong> ' . esc_html( wp_trim_words( $snapshot->description, 30 ) );
+			$lines[] = '<strong>' . esc_html__( 'Description:', 'category-tag-trash' ) . '</strong> ' . esc_html( wp_trim_words( $snapshot->description, 30 ) );
 		}
 
 		if ( ! $lines ) {
@@ -336,8 +336,8 @@ final class TrashListTable extends \WP_List_Table {
 		}
 
 		return sprintf(
-			'<details class="tt-details"><summary>%s</summary><p>%s</p></details>',
-			esc_html__( 'What restore brings back', 'term-trash' ),
+			'<details class="ctt-details"><summary>%s</summary><p>%s</p></details>',
+			esc_html__( 'What restore brings back', 'category-tag-trash' ),
 			implode( '</p><p>', $lines )
 		);
 	}

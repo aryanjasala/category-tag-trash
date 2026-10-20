@@ -2,24 +2,24 @@
 /**
  * Abilities: the trash for AI agents and other Abilities API clients.
  *
- * @package AryanX\TermTrash
+ * @package AryanX\CategoryTagTrash
  */
 
-namespace AryanX\TermTrash;
+namespace AryanX\CategoryTagTrash;
 
-use AryanX\TermTrash\Admin\TrashPage;
+use AryanX\CategoryTagTrash\Admin\TrashPage;
 
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Registers Term Trash's abilities on WordPress 6.9 and later.
+ * Registers Category & Tag Trash's abilities on WordPress 6.9 and later.
  *
  * An agent that deleted the wrong category can find it and put it back, with
  * its posts, child terms and menu links, the same way a person would.
  */
 final class Abilities implements Service {
 
-	public const CATEGORY = 'term-trash';
+	public const CATEGORY = 'category-tag-trash';
 
 	/**
 	 * Trashed terms.
@@ -59,7 +59,7 @@ final class Abilities implements Service {
 	}
 
 	/**
-	 * Registers the Term Trash category.
+	 * Registers the Category & Tag Trash category.
 	 */
 	public function register_category(): void {
 		if ( ! function_exists( 'wp_register_ability_category' ) ) {
@@ -69,8 +69,8 @@ final class Abilities implements Service {
 		wp_register_ability_category(
 			self::CATEGORY,
 			array(
-				'label'       => __( 'Term Trash', 'term-trash' ),
-				'description' => __( 'Deleted categories, tags and custom terms, kept for a while so they can be restored.', 'term-trash' ),
+				'label'       => __( 'Category & Tag Trash', 'category-tag-trash' ),
+				'description' => __( 'Deleted categories, tags and custom terms, kept for a while so they can be restored.', 'category-tag-trash' ),
 			)
 		);
 	}
@@ -85,7 +85,7 @@ final class Abilities implements Service {
 				'id' => array(
 					'type'        => 'integer',
 					'minimum'     => 1,
-					'description' => __( 'Trash item ID from term-trash/list. Not the term ID.', 'term-trash' ),
+					'description' => __( 'Trash item ID from category-tag-trash/list. Not the term ID.', 'category-tag-trash' ),
 				),
 			),
 			'required'             => array( 'id' ),
@@ -94,18 +94,18 @@ final class Abilities implements Service {
 
 		$this->ability(
 			'list',
-			__( 'List trashed terms', 'term-trash' ),
-			__( 'Deleted categories, tags and other terms that can still be restored, newest first, with what a restore brings back.', 'term-trash' ),
+			__( 'List trashed terms', 'category-tag-trash' ),
+			__( 'Deleted categories, tags and other terms that can still be restored, newest first, with what a restore brings back.', 'category-tag-trash' ),
 			array(
 				'type'                 => 'object',
 				'properties'           => array(
 					'taxonomy' => array(
 						'type'        => 'string',
-						'description' => __( 'Only this taxonomy, such as category or post_tag.', 'term-trash' ),
+						'description' => __( 'Only this taxonomy, such as category or post_tag.', 'category-tag-trash' ),
 					),
 					'search'   => array(
 						'type'        => 'string',
-						'description' => __( 'Name contains this text.', 'term-trash' ),
+						'description' => __( 'Name contains this text.', 'category-tag-trash' ),
 					),
 					'limit'    => array(
 						'type'    => 'integer',
@@ -157,8 +157,8 @@ final class Abilities implements Service {
 
 		$this->ability(
 			'restore',
-			__( 'Restore a trashed term', 'term-trash' ),
-			__( 'Puts a deleted term back with its original ID, meta, posts, child terms and menu links. Very large terms finish in the background.', 'term-trash' ),
+			__( 'Restore a trashed term', 'category-tag-trash' ),
+			__( 'Puts a deleted term back with its original ID, meta, posts, child terms and menu links. Very large terms finish in the background.', 'category-tag-trash' ),
 			$item_input,
 			array(
 				'type'       => 'object',
@@ -182,8 +182,8 @@ final class Abilities implements Service {
 
 		$this->ability(
 			'delete',
-			__( 'Delete a trashed term for good', 'term-trash' ),
-			__( 'Removes a term from Term Trash permanently. It cannot be restored afterwards.', 'term-trash' ),
+			__( 'Delete a trashed term for good', 'category-tag-trash' ),
+			__( 'Removes a term from Category & Tag Trash permanently. It cannot be restored afterwards.', 'category-tag-trash' ),
 			$item_input,
 			array(
 				'type'       => 'object',
@@ -276,12 +276,12 @@ final class Abilities implements Service {
 
 		$snapshot = $this->trash->get( (int) ( ( (array) $input )['id'] ?? 0 ) );
 
-		// A missing item is reported by the ability itself, as "no longer in Term Trash".
+		// A missing item is reported by the ability itself, as "no longer in Category & Tag Trash".
 		return ! $snapshot || $this->trash->user_can_manage( $snapshot );
 	}
 
 	/**
-	 * Registers one ability in the Term Trash category.
+	 * Registers one ability in the Category & Tag Trash category.
 	 *
 	 * @param string   $name        Name without the namespace.
 	 * @param string   $label       Label.

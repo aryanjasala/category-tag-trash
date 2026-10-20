@@ -1,15 +1,15 @@
 <?php
 /**
- * `wp term-trash` commands.
+ * `wp category-tag-trash` commands.
  *
- * @package AryanX\TermTrash
+ * @package AryanX\CategoryTagTrash
  */
 
-namespace AryanX\TermTrash\Cli;
+namespace AryanX\CategoryTagTrash\Cli;
 
-use AryanX\TermTrash\Purger;
-use AryanX\TermTrash\Restorer;
-use AryanX\TermTrash\Trash;
+use AryanX\CategoryTagTrash\Purger;
+use AryanX\CategoryTagTrash\Restorer;
+use AryanX\CategoryTagTrash\Trash;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -119,7 +119,7 @@ final class Command {
 	 * ## OPTIONS
 	 *
 	 * <id>...
-	 * : Trash item IDs from `wp term-trash list`.
+	 * : Trash item IDs from `wp category-tag-trash list`.
 	 *
 	 * @param array $args Positional arguments.
 	 */
@@ -144,7 +144,7 @@ final class Command {
 	 * ## OPTIONS
 	 *
 	 * [<id>...]
-	 * : Trash item IDs from `wp term-trash list`.
+	 * : Trash item IDs from `wp category-tag-trash list`.
 	 *
 	 * [--all]
 	 * : Empty the whole trash.
@@ -157,7 +157,7 @@ final class Command {
 	 */
 	public function delete( array $args, array $assoc_args ): void {
 		if ( ! empty( $assoc_args['all'] ) ) {
-			\WP_CLI::confirm( 'Delete everything in Term Trash for good?', $assoc_args );
+			\WP_CLI::confirm( 'Delete everything in Category & Tag Trash for good?', $assoc_args );
 			$deleted = 0;
 			do {
 				$result   = $this->purger->empty_trash( 1000 );

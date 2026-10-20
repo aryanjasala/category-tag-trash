@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Builds dist/term-trash/ and dist/term-trash.zip from the working tree, leaving out
+# Builds dist/category-tag-trash/ and dist/category-tag-trash.zip from the working tree, leaving out
 # everything listed in .distignore. Used by the release and Plugin Check workflows.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-slug="term-trash"
+slug="category-tag-trash"
 rm -rf dist
 mkdir -p "dist/$slug"
 rsync -a --exclude-from=.distignore ./ "dist/$slug/"

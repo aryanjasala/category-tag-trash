@@ -1,20 +1,20 @@
-.tt-inline {
+.ctt-inline {
 	display: inline;
 }
 
-.tt-page .tt-empty {
+.ctt-page .ctt-empty {
 	color: #b32d2e;
 	border-color: #b32d2e;
 }
 
-.tt-page .tt-empty:hover,
-.tt-page .tt-empty:focus {
+.ctt-page .ctt-empty:hover,
+.ctt-page .ctt-empty:focus {
 	background: #b32d2e;
 	border-color: #b32d2e;
 	color: #fff;
 }
 
-.tt-intro {
+.ctt-intro {
 	display: flex;
 	flex-wrap: wrap;
 	justify-content: space-between;
@@ -23,65 +23,65 @@
 	margin: 8px 0 4px;
 }
 
-.tt-intro p {
+.ctt-intro p {
 	margin: 0;
 }
 
-.tt-retention {
+.ctt-retention {
 	display: flex;
 	align-items: center;
 	gap: 6px;
 }
 
-.tt-page .column-taxonomy {
+.ctt-page .column-taxonomy {
 	width: 14%;
 }
 
-.tt-page .column-attached {
+.ctt-page .column-attached {
 	width: 22%;
 }
 
-.tt-page .column-deleted {
+.ctt-page .column-deleted {
 	width: 16%;
 }
 
-.tt-slug {
+.ctt-slug {
 	font-size: 11px;
 }
 
-.tt-muted {
+.ctt-muted {
 	color: #646970;
 }
 
-.tt-warning {
+.ctt-warning {
 	color: #b32d2e;
 }
 
-.tt-details {
+.ctt-details {
 	margin-top: 6px;
 }
 
-.tt-details summary {
+.ctt-details summary {
 	cursor: pointer;
 	color: #2271b1;
 }
 
-.tt-details p {
+.ctt-details p {
 	margin: 6px 0 0;
 }
 
-.term-trash-note {
+.category-tag-trash-note {
 	color: #646970;
 }
 
-.term-trash-note .dashicons {
+.category-tag-trash-note .dashicons {
 	font-size: 16px;
 	width: 16px;
 	height: 16px;
 	vertical-align: text-bottom;
 }
 
-.term-trash-undo .button {
+.category-tag-trash-undo .button {
 	margin-left: 6px;
 	vertical-align: baseline;
 }

@@ -2,10 +2,10 @@
 /**
  * Storage for trashed terms.
  *
- * @package AryanX\TermTrash
+ * @package AryanX\CategoryTagTrash
  */
 
-namespace AryanX\TermTrash;
+namespace AryanX\CategoryTagTrash;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -14,13 +14,13 @@ defined( 'ABSPATH' ) || exit;
  */
 final class Trash implements Service {
 
-	public const POST_TYPE    = 'term_trash_item';
-	public const SNAPSHOT_KEY = '_term_trash_snapshot';
-	public const TAXONOMY_KEY = '_term_trash_taxonomy';
-	public const TERM_KEY     = '_term_trash_term_id';
-	public const OBJECTS_KEY  = '_term_trash_objects';
-	public const FALLBACK_KEY = '_term_trash_fallback';
-	public const STATE_KEY    = '_term_trash_restore_state';
+	public const POST_TYPE    = 'category_tag_trash';
+	public const SNAPSHOT_KEY = '_category_tag_trash_snapshot';
+	public const TAXONOMY_KEY = '_category_tag_trash_taxonomy';
+	public const TERM_KEY     = '_category_tag_trash_term_id';
+	public const OBJECTS_KEY  = '_category_tag_trash_objects';
+	public const FALLBACK_KEY = '_category_tag_trash_fallback';
+	public const STATE_KEY    = '_category_tag_trash_restore_state';
 
 	/**
 	 * Post status of an item in the trash.
@@ -67,7 +67,7 @@ final class Trash implements Service {
 		register_post_type(
 			self::POST_TYPE,
 			array(
-				'label'            => __( 'Term Trash', 'term-trash' ),
+				'label'            => __( 'Category & Tag Trash', 'category-tag-trash' ),
 				'public'           => false,
 				'show_ui'          => false,
 				'rewrite'          => false,
@@ -103,12 +103,12 @@ final class Trash implements Service {
 		$keep   = $object && $object->show_ui && 'nav_menu' !== $taxonomy;
 
 		/**
-		 * Filters whether deleted terms of a taxonomy go to Term Trash.
+		 * Filters whether deleted terms of a taxonomy go to Category & Tag Trash.
 		 *
 		 * @param bool   $keep     Whether to keep deleted terms.
 		 * @param string $taxonomy Taxonomy name.
 		 */
-		return (bool) apply_filters( 'term_trash_supports_taxonomy', $keep, $taxonomy );
+		return (bool) apply_filters( 'category_tag_trash_supports_taxonomy', $keep, $taxonomy );
 	}
 
 	/**
@@ -341,7 +341,7 @@ final class Trash implements Service {
 		 * @param int      $item_id  Trash item ID.
 		 * @param Snapshot $snapshot What was saved.
 		 */
-		do_action( 'term_trash_deleted', $item_id, $snapshot );
+		do_action( 'category_tag_trash_deleted', $item_id, $snapshot );
 
 		return $this->remove( $item_id );
 	}
