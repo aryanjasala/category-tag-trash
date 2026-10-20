@@ -1,0 +1,87 @@
+.tt-inline {
+	display: inline;
+}
+
+.tt-page .tt-empty {
+	color: #b32d2e;
+	border-color: #b32d2e;
+}
+
+.tt-page .tt-empty:hover,
+.tt-page .tt-empty:focus {
+	background: #b32d2e;
+	border-color: #b32d2e;
+	color: #fff;
+}
+
+.tt-intro {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	align-items: center;
+	gap: 8px 24px;
+	margin: 8px 0 4px;
+}
+
+.tt-intro p {
+	margin: 0;
+}
+
+.tt-retention {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.tt-page .column-taxonomy {
+	width: 14%;
+}
+
+.tt-page .column-attached {
+	width: 22%;
+}
+
+.tt-page .column-deleted {
+	width: 16%;
+}
+
+.tt-slug {
+	font-size: 11px;
+}
+
+.tt-muted {
+	color: #646970;
+}
+
+.tt-warning {
+	color: #b32d2e;
+}
+
+.tt-details {
+	margin-top: 6px;
+}
+
+.tt-details summary {
+	cursor: pointer;
+	color: #2271b1;
+}
+
+.tt-details p {
+	margin: 6px 0 0;
+}
+
+.term-trash-note {
+	color: #646970;
+}
+
+.term-trash-note .dashicons {
+	font-size: 16px;
+	width: 16px;
+	height: 16px;
+	vertical-align: text-bottom;
+}
+
+.term-trash-undo .button {
+	margin-left: 6px;
+	vertical-align: baseline;
+}
