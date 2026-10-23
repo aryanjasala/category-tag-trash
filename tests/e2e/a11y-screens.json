@@ -1,0 +1,41 @@
+{
+  "$comment": "Screens tests/e2e/a11y.spec.js checks with axe-core. This file belongs to the plugin: apply-template.py only writes it when it is missing. The fields are described in docs/DEVELOPMENT.md.",
+  "include": ["#wpbody-content"],
+  "exclude": [],
+  "screens": [
+    {
+      "name": "Tools > Category & Tag Trash, empty",
+      "url": "/wp-admin/tools.php?page=category-tag-trash"
+    },
+    {
+      "name": "Tools > Category & Tag Trash with trashed terms and one restore preview open",
+      "setup": [
+        { "wp": ["term", "create", "category", "Recipes", "--description=Everything we cook", "--porcelain"], "save": "recipes" },
+        ["post", "create", "--post_title=Sourdough basics", "--post_status=publish", "--post_category={recipes}"],
+        { "wp": ["term", "create", "post_tag", "summer", "--porcelain"], "save": "summer" },
+        ["term", "delete", "category", "{recipes}"],
+        ["term", "delete", "post_tag", "{summer}"]
+      ],
+      "url": "/wp-admin/tools.php?page=category-tag-trash",
+      "steps": [{ "click": ".ctt-details summary" }],
+      "cleanup": [
+        ["category-tag-trash", "delete", "--all", "--yes"],
+        ["eval", "foreach ( get_posts( array( 'title' => 'Sourdough basics', 'post_status' => 'any', 'numberposts' => -1, 'fields' => 'ids' ) ) as $id ) { wp_delete_post( $id, true ); }"]
+      ]
+    },
+    {
+      "name": "Categories screen with Undo after deleting a category",
+      "setup": [{ "wp": ["term", "create", "category", "Travel", "--porcelain"], "save": "travel" }],
+      "dialogs": "accept",
+      "url": "/wp-admin/edit-tags.php?taxonomy=category",
+      "steps": [
+        { "hover": "#tag-{travel}" },
+        { "click": "#tag-{travel} .delete-tag" },
+        { "waitFor": ".category-tag-trash-undo" }
+      ],
+      "include": [".category-tag-trash-undo"],
+      "cleanup": [["category-tag-trash", "delete", "--all", "--yes"]]
+    }
+  ],
+  "skip": {}
+}
