@@ -425,7 +425,12 @@ final class Restorer implements Service {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- Placeholders are built from the chunk size.
 		$wpdb->query( $wpdb->prepare( "INSERT IGNORE INTO {$wpdb->term_relationships} ( object_id, term_taxonomy_id, term_order ) VALUES {$placeholders}", $values ) );
 
-		clean_object_term_cache( $ids, $object_types );
+		// Once per object type: core accepts an array here, but it passes it on to the
+		// clean_object_term_cache action, and callbacks there (Yoast SEO's sitemap cache)
+		// expect a string.
+		foreach ( $object_types as $object_type ) {
+			clean_object_term_cache( $ids, $object_type );
+		}
 
 		// Fire what wp_set_object_terms() fires, so search indexes (ElasticPress,
 		// VIP Enterprise Search) and caches pick up the restored terms.
