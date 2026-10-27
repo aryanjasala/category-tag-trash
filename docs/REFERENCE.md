@@ -55,7 +55,7 @@ wp category-tag-trash delete --all [--yes]
 ## PHP API
 
 ```php
-$plugin = AryanX\CategoryTagTrash\Plugin::instance();
+$plugin = AryanX\Axle\CategoryTagTrash\Plugin::instance();
 
 $plugin->trash()->find( array( 'taxonomy' => 'category', 'per_page' => 100 ) ); // [ 'ids' => [...], 'total' => n ], at most 500 per page
 $plugin->restorer()->restore( $item_id );        // [ 'term_id' => n, 'notes' => [...], 'background' => bool ] or WP_Error

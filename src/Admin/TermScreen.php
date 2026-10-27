@@ -2,17 +2,17 @@
 /**
  * Undo notices and the trash link on Categories, Tags and other term screens.
  *
- * @package AryanX\CategoryTagTrash
+ * @package AryanX\Axle\CategoryTagTrash
  */
 
-namespace AryanX\CategoryTagTrash\Admin;
+namespace AryanX\Axle\CategoryTagTrash\Admin;
 
-use AryanX\CategoryTagTrash\Restorer;
-use AryanX\CategoryTagTrash\Service;
-use AryanX\CategoryTagTrash\Snapshotter;
-use AryanX\CategoryTagTrash\Trash;
-use const AryanX\CategoryTagTrash\PLUGIN_FILE;
-use const AryanX\CategoryTagTrash\VERSION;
+use AryanX\Axle\CategoryTagTrash\Restorer;
+use AryanX\Axle\CategoryTagTrash\Service;
+use AryanX\Axle\CategoryTagTrash\Snapshotter;
+use AryanX\Axle\CategoryTagTrash\Trash;
+use const AryanX\Axle\CategoryTagTrash\PLUGIN_FILE;
+use const AryanX\Axle\CategoryTagTrash\VERSION;
 
 defined( 'ABSPATH' ) || exit;
 

@@ -2,14 +2,14 @@
 /**
  * Plugin bootstrap.
  *
- * @package AryanX\CategoryTagTrash
+ * @package AryanX\Axle\CategoryTagTrash
  */
 
-namespace AryanX\CategoryTagTrash;
+namespace AryanX\Axle\CategoryTagTrash;
 
-use AryanX\CategoryTagTrash\Admin\TermScreen;
-use AryanX\CategoryTagTrash\Admin\TrashPage;
-use AryanX\CategoryTagTrash\Cli\Command;
+use AryanX\Axle\CategoryTagTrash\Admin\TermScreen;
+use AryanX\Axle\CategoryTagTrash\Admin\TrashPage;
+use AryanX\Axle\CategoryTagTrash\Cli\Command;
 
 defined( 'ABSPATH' ) || exit;
 

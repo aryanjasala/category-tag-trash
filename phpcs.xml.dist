@@ -32,7 +32,7 @@
 	<rule ref="WordPress.NamingConventions.PrefixAllGlobals">
 		<properties>
 			<property name="prefixes" type="array">
-				<element value="AryanX\CategoryTagTrash"/>
+				<element value="AryanX\Axle\CategoryTagTrash"/>
 				<element value="category_tag_trash"/>
 			</property>
 		</properties>

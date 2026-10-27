@@ -2,12 +2,12 @@
 /**
  * Abilities: the trash for AI agents and other Abilities API clients.
  *
- * @package AryanX\CategoryTagTrash
+ * @package AryanX\Axle\CategoryTagTrash
  */
 
-namespace AryanX\CategoryTagTrash;
+namespace AryanX\Axle\CategoryTagTrash;
 
-use AryanX\CategoryTagTrash\Admin\TrashPage;
+use AryanX\Axle\CategoryTagTrash\Admin\TrashPage;
 
 defined( 'ABSPATH' ) || exit;
 

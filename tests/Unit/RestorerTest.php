@@ -2,15 +2,15 @@
 /**
  * Tests for re-attaching objects to a restored term.
  *
- * @package AryanX\CategoryTagTrash
+ * @package AryanX\Axle\CategoryTagTrash
  */
 
-namespace AryanX\CategoryTagTrash\Tests\Unit;
+namespace AryanX\Axle\CategoryTagTrash\Tests\Unit;
 
-use AryanX\CategoryTagTrash\Restorer;
-use AryanX\CategoryTagTrash\Settings;
-use AryanX\CategoryTagTrash\Snapshot;
-use AryanX\CategoryTagTrash\Trash;
+use AryanX\Axle\CategoryTagTrash\Restorer;
+use AryanX\Axle\CategoryTagTrash\Settings;
+use AryanX\Axle\CategoryTagTrash\Snapshot;
+use AryanX\Axle\CategoryTagTrash\Trash;
 use Brain\Monkey\Functions;
 
 final class RestorerTest extends TestCase {

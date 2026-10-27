@@ -25,12 +25,12 @@
   },
   "autoload": {
     "psr-4": {
-      "AryanX\\CategoryTagTrash\\": "src/"
+      "AryanX\\Axle\\CategoryTagTrash\\": "src/"
     }
   },
   "autoload-dev": {
     "psr-4": {
-      "AryanX\\CategoryTagTrash\\Tests\\": "tests/"
+      "AryanX\\Axle\\CategoryTagTrash\\Tests\\": "tests/"
     }
   },
   "config": {

@@ -12,17 +12,17 @@
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       category-tag-trash
  *
- * @package AryanX\CategoryTagTrash
+ * @package AryanX\Axle\CategoryTagTrash
  */
 
-namespace AryanX\CategoryTagTrash;
+namespace AryanX\Axle\CategoryTagTrash;
 
 defined( 'ABSPATH' ) || exit;
 
 const VERSION     = '2.0.0';
 const PLUGIN_FILE = __FILE__;
 
-// PSR-4: AryanX\CategoryTagTrash\Foo\Bar lives in src/Foo/Bar.php.
+// PSR-4: AryanX\Axle\CategoryTagTrash\Foo\Bar lives in src/Foo/Bar.php.
 spl_autoload_register(
 	static function ( $class_name ) {
 		$prefix = __NAMESPACE__ . '\\';
