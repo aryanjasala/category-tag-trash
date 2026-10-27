@@ -2,14 +2,14 @@
 /**
  * Tests for snapshots, retention and which taxonomies are kept.
  *
- * @package AryanX\CategoryTagTrash
+ * @package AryanX\Axle\CategoryTagTrash
  */
 
-namespace AryanX\CategoryTagTrash\Tests\Unit;
+namespace AryanX\Axle\CategoryTagTrash\Tests\Unit;
 
-use AryanX\CategoryTagTrash\Settings;
-use AryanX\CategoryTagTrash\Snapshot;
-use AryanX\CategoryTagTrash\Trash;
+use AryanX\Axle\CategoryTagTrash\Settings;
+use AryanX\Axle\CategoryTagTrash\Snapshot;
+use AryanX\Axle\CategoryTagTrash\Trash;
 use Brain\Monkey\Filters;
 use Brain\Monkey\Functions;
 

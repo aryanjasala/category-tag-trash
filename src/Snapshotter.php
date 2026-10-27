@@ -2,10 +2,10 @@
 /**
  * Captures terms as WordPress deletes them.
  *
- * @package AryanX\CategoryTagTrash
+ * @package AryanX\Axle\CategoryTagTrash
  */
 
-namespace AryanX\CategoryTagTrash;
+namespace AryanX\Axle\CategoryTagTrash;
 
 defined( 'ABSPATH' ) || exit;
 

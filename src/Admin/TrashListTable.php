@@ -2,13 +2,13 @@
 /**
  * List table for Tools > Category & Tag Trash.
  *
- * @package AryanX\CategoryTagTrash
+ * @package AryanX\Axle\CategoryTagTrash
  */
 
-namespace AryanX\CategoryTagTrash\Admin;
+namespace AryanX\Axle\CategoryTagTrash\Admin;
 
-use AryanX\CategoryTagTrash\Snapshot;
-use AryanX\CategoryTagTrash\Trash;
+use AryanX\Axle\CategoryTagTrash\Snapshot;
+use AryanX\Axle\CategoryTagTrash\Trash;
 
 defined( 'ABSPATH' ) || exit;
 

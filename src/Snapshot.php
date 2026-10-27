@@ -2,10 +2,10 @@
 /**
  * Everything about a term at the moment it was deleted.
  *
- * @package AryanX\CategoryTagTrash
+ * @package AryanX\Axle\CategoryTagTrash
  */
 
-namespace AryanX\CategoryTagTrash;
+namespace AryanX\Axle\CategoryTagTrash;
 
 defined( 'ABSPATH' ) || exit;
 

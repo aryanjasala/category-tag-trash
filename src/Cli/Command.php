@@ -2,14 +2,14 @@
 /**
  * `wp category-tag-trash` commands.
  *
- * @package AryanX\CategoryTagTrash
+ * @package AryanX\Axle\CategoryTagTrash
  */
 
-namespace AryanX\CategoryTagTrash\Cli;
+namespace AryanX\Axle\CategoryTagTrash\Cli;
 
-use AryanX\CategoryTagTrash\Purger;
-use AryanX\CategoryTagTrash\Restorer;
-use AryanX\CategoryTagTrash\Trash;
+use AryanX\Axle\CategoryTagTrash\Purger;
+use AryanX\Axle\CategoryTagTrash\Restorer;
+use AryanX\Axle\CategoryTagTrash\Trash;
 
 defined( 'ABSPATH' ) || exit;
 

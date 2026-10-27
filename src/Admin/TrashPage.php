@@ -2,18 +2,18 @@
 /**
  * Tools > Category & Tag Trash.
  *
- * @package AryanX\CategoryTagTrash
+ * @package AryanX\Axle\CategoryTagTrash
  */
 
-namespace AryanX\CategoryTagTrash\Admin;
+namespace AryanX\Axle\CategoryTagTrash\Admin;
 
-use AryanX\CategoryTagTrash\Purger;
-use AryanX\CategoryTagTrash\Restorer;
-use AryanX\CategoryTagTrash\Service;
-use AryanX\CategoryTagTrash\Settings;
-use AryanX\CategoryTagTrash\Trash;
-use const AryanX\CategoryTagTrash\PLUGIN_FILE;
-use const AryanX\CategoryTagTrash\VERSION;
+use AryanX\Axle\CategoryTagTrash\Purger;
+use AryanX\Axle\CategoryTagTrash\Restorer;
+use AryanX\Axle\CategoryTagTrash\Service;
+use AryanX\Axle\CategoryTagTrash\Settings;
+use AryanX\Axle\CategoryTagTrash\Trash;
+use const AryanX\Axle\CategoryTagTrash\PLUGIN_FILE;
+use const AryanX\Axle\CategoryTagTrash\VERSION;
 
 defined( 'ABSPATH' ) || exit;
 
