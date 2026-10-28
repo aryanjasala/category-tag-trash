@@ -42,6 +42,10 @@ Free and open source under the GPL. No pro version, no upsells, no ads in wp-adm
 * `wp category-tag-trash restore <id>...`
 * `wp category-tag-trash delete <id>...` or `wp category-tag-trash delete --all`
 
+**Try it before you install.** [try.axlewp.com/category-tag-trash](https://try.axlewp.com/category-tag-trash) opens a private WordPress in your browser with this plugin and some demo content.
+
+Part of [Axle](https://axlewp.com/), a family of free plugins for running WordPress sites safely.
+
 == Frequently Asked Questions ==
 
 = What happens if a new term uses the old slug? =
