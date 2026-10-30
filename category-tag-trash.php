@@ -3,7 +3,7 @@
  * Plugin Name:       Category & Tag Trash
  * Plugin URI:        https://wordpress.org/plugins/category-tag-trash/
  * Description:       Deleted categories, tags and custom terms go to a trash instead of disappearing. Undo a delete in one click, or restore later with the term's posts, child terms and menu links.
- * Version:           2.0.0
+ * Version:           2.0.1
  * Requires at least: 6.6
  * Requires PHP:      7.4
  * Author:            Aryan Jasala
@@ -19,7 +19,7 @@ namespace AryanX\Axle\CategoryTagTrash;
 
 defined( 'ABSPATH' ) || exit;
 
-const VERSION     = '2.0.0';
+const VERSION     = '2.0.1';
 const PLUGIN_FILE = __FILE__;
 
 // PSR-4: AryanX\Axle\CategoryTagTrash\Foo\Bar lives in src/Foo/Bar.php.
